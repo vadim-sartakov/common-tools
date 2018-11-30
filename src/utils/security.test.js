@@ -4,13 +4,25 @@ import { getPermissions } from "./security";
 describe("Security tests", () => {
 
     it("No permission for specified roles", () => {
-        const result = getPermissions(["USER", "MANAGER"], { "ADMIN": { read: true, modify: true } });
-        expect(result).to.be.deep.equal({ });
+        const result = getPermissions({ roles: ["USER", "MANAGER"] }, { "ACCOUNTANT": { read: true, modify: true } });
+        expect(result).to.be.deep.equal({ read: false, modify: false });
     });
 
     it("Single role", () => {        
-        const result = getPermissions(["USER"], { "USER": { read: true, modify: true } });
-        expect(result).to.be.deep.equal({ read: true, modify: true });
+        const result = getPermissions({ roles: ["USER"] }, { "USER": { read: true, modify: true } });
+        expect(result).to.deep.equal({ read: true, modify: true });
+    });
+
+    it("Admin user", () => {
+        const schema = { "USER": { read: { fields: "fieldOne" } } };
+        const result = getPermissions({ roles: ["ADMIN"] }, schema);
+        expect(result).to.deep.equal({ read: true, modify: true });
+    });
+
+    it("Admin read user", () => {
+        const schema = { "USER": { read: { fields: "fieldOne" } } };
+        const result = getPermissions({ roles: ["ADMIN_READ"] }, schema);
+        expect(result).to.deep.equal({ read: true, modify: false });
     });
 
     it("With 'ALL' role", () => {
@@ -21,8 +33,8 @@ describe("Security tests", () => {
                 modify: { fields: "field" }
             }
         };   
-        const result = getPermissions(["USER"], schema);
-        expect(result).to.be.deep.equal({ read: true, modify: true });
+        const result = getPermissions({ roles: ["USER"] }, schema);
+        expect(result).to.deep.equal({ read: true, modify: true });
     });
 
     it("Mixed roles", () => {
@@ -36,8 +48,8 @@ describe("Security tests", () => {
                 modify: { fields: "field" }
             }
         };   
-        const result = getPermissions(["USER", "MODERATOR"], schema);
-        expect(result).to.be.deep.equal({ read: true, modify: true });
+        const result = getPermissions({ roles: ["USER", "MODERATOR"] }, schema);
+        expect(result).to.deep.equal({ read: true, modify: true });
     });
 
     it("Mixing roles with inclusive fields", () => {
@@ -45,8 +57,8 @@ describe("Security tests", () => {
             "USER": { read: { fields: "fieldOne fieldTwo" } },
             "MODERATOR": { read: { fields: "fieldThree" } }
         };
-        const result = getPermissions(["USER", "MODERATOR"], schema);
-        expect(result).to.deep.equal({ field: "fieldOne fieldTwo fieldThree" });
+        const result = getPermissions({ roles: ["USER", "MODERATOR"] }, schema);
+        expect(result).to.deep.equal({ read: { fields: "fieldOne fieldTwo fieldThree", entries: [] }, modify: false });
     });
 
     it("Mixing roles with exclusive fields", () => {
@@ -54,8 +66,8 @@ describe("Security tests", () => {
             "USER": { read: { fields: "-fieldOne -fieldTwo" } },
             "MODERATOR": { read: { fields: "-fieldThree" } }
         };
-        const result = getPermissions(["USER", "MODERATOR"], schema);
-        expect(result).to.deep.equal({ field: "-fieldOne -fieldTwo -fieldThree" });
+        const result = getPermissions({ roles: ["USER", "MODERATOR"] }, schema);
+        expect(result).to.deep.equal({ read: { fields: "-fieldOne -fieldTwo -fieldThree", entries: [] }, modify: false });
     });
 
     it("Mixing roles with inclusive and exclusive fields", () => {
@@ -63,24 +75,21 @@ describe("Security tests", () => {
             "USER": { read: { fields: "-fieldOne" } },
             "MODERATOR": { read: { fields: "fieldThree" } }
         };
-        expect(getPermissions(["USER", "MODERATOR"], schema)).to.throw("MixedFieldsPermissionsTypes");
+        expect(() => getPermissions({ roles: ["USER", "MODERATOR"] }, schema)).to.throw("MixedFieldsPermissionsTypes");
     });
 
     it("Mixing roles with different functions", () => {
         const schema = {
-            "USER": { read: { entries: user => ({ user }) } },
+            "USER": { read: { entries: user => ({ user: user.id }) } },
             "MODERATOR": { read: { entries: user => ({ department: user.department }) } }
         };   
-        const result = getPermissions(["USER", "MODERATOR"], schema);
-        expect(result.read).to.have.nested.property("result.read.entries");
-        expect(result.read.entries.length).to.equal(2);
-        const firstFunction = result.read.entries[0];
-        expect(typeof(firstFunction)).to.equal("function");
-        expect(firstFunction("user")).to.deep.equal({ user: "user" });
-
-        const secondFunction = result.read.entries[0];
-        expect(typeof(secondFunction)).to.equal("function");
-        expect(secondFunction({ department: "department" })).to.deep.equal({ department: "department" });
+        const result = getPermissions({ id: "user", roles: ["USER", "MODERATOR"], department: "department" }, schema);
+        expect(result).to.have.nested.property("read.entries");
+        const { entries } = result.read;
+        expect(entries).instanceOf(Array);
+        expect(entries.length).to.equal(2);
+        expect(entries[0]).to.deep.equal({ user: "user" });
+        expect(entries[1]).to.deep.equal({ department: "department" });
     });
 
 });
