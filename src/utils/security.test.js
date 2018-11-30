@@ -70,14 +70,6 @@ describe("Security tests", () => {
         expect(result).to.deep.equal({ read: { fields: "-fieldOne -fieldTwo -fieldThree", entries: [] }, modify: false });
     });
 
-    it("Mixing roles with inclusive and exclusive fields", () => {
-        const schema = {
-            "USER": { read: { fields: "-fieldOne" } },
-            "MODERATOR": { read: { fields: "fieldThree" } }
-        };
-        expect(() => getPermissions({ roles: ["USER", "MODERATOR"] }, schema)).to.throw("MixedFieldsPermissionsTypes");
-    });
-
     it("Mixing roles with different functions", () => {
         const schema = {
             "USER": { read: { entries: user => ({ user: user.id }) } },
