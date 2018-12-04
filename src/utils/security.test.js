@@ -22,7 +22,7 @@ describe("Security tests", () => {
             "MANAGER": { fields: { phoneNumber: 1 } }
         };
         const result = getPermissions(user, schema);
-        expect(result).to.be.deep.equal({ firstName: 1, lastname: 1, phoneNumber: 1 });
+        expect(result).to.be.deep.equal({ fields: { firstName: 1, lastname: 1, phoneNumber: 1 } });
     });
 
     it("Function", () => {
@@ -33,14 +33,14 @@ describe("Security tests", () => {
         };
         const result = getPermissions(user, schema);
         expect(result).to.have.nested.property("readFilter");
-        const { readFilter } = result.read;
+        const { readFilter } = result;
         expect(readFilter).instanceOf(Array);
         expect(readFilter.length).to.equal(2);
         expect(readFilter[0]).to.deep.equal({ user: "user" });
         expect(readFilter[1]).to.deep.equal({ department: "department" });
     });
 
-    it("Mixing different types", () => {
+    it.only("Mixing different types", () => {
         const user = { id: "user", roles: ["USER", "MODERATOR"], department: "department" };
         const schema = {
             "USER": { read: true },

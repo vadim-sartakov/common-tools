@@ -7,21 +7,24 @@ export const getPermissions = (user, securitySchema) => {
 
             const prevPerm = resultPermissions[modifier];
             const curPerm = curRolePermissions[modifier] || { };
-            if (prevPerm && typeof(prevPerm) !== typeof(curPerm)) throw new Error("MixedTypes");
+
+            if (prevPerm && typeof(curPerm) !== "function" && typeof(prevPerm) !== typeof(curPerm)) throw new Error("MixedTypes");
 
             let mergeValue;
             switch (typeof(curPerm)) {
                 case "object":
-                    mergeValue = { ...curPerm };
+                    mergeValue = { ...prevPerm, ...curPerm };
                     break;
                 case "function":
-                    mergeValue = curPerm(user);
+                    mergeValue = [];
+                    prevPerm && mergeValue.push(...prevPerm);
+                    mergeValue.push(curPerm(user));
                     break;
                 default:
                     mergeValue = curPerm;
             }
 
-            return { ...prevPerm, [modifier]: mergeValue };
+            return { [modifier]: mergeValue };
 
         }, { });
         return { ...resultPermissions, ...mergedPermissions };
