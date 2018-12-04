@@ -1,29 +1,29 @@
-export const getPermissions = (user, securitySchema, ...access) => {
+export const getPermissions = (user, securitySchema) => {
 
     return user.roles.reduce(( resultPermissions, curRole ) => {
 
         const curRolePermissions = securitySchema[curRole] || { };
         const mergedPermissions = Object.keys(curRolePermissions).reduce((mergeResult, modifier) => {
 
-            const prevPerm = resultPermissions[modifier];
-            let curPerm = curRolePermissions[modifier];
-            const valueType = typeof(curPerm);
+            const prevPermValue = resultPermissions[modifier];
+            let curPermValue = curRolePermissions[modifier];
+            const valueType = typeof(curPermValue);
 
-            if (valueType === "function") curPerm = curPerm(user);
-            if (prevPerm && typeof(curPerm) !== "function" && typeof(prevPerm) !== typeof(curPerm)) throw new Error("MixedTypes");
+            if (valueType === "function") curPermValue = curPermValue(user);
+            if (prevPermValue && typeof(prevPermValue) !== typeof(curPermValue)) throw new Error("MixedTypes");
 
             let mergeValue;
             switch (valueType) {
                 case "object":
-                    mergeValue = { ...prevPerm, ...curPerm };
+                    mergeValue = { ...prevPermValue, ...curPermValue };
                     break;
                 case "function":
                     mergeValue = [];
-                    prevPerm && mergeValue.push(...prevPerm);
-                    mergeValue.push(curPerm);
+                    prevPermValue && mergeValue.push(...prevPermValue);
+                    mergeValue.push(curPermValue);
                     break;
                 default:
-                    mergeValue = curPerm;
+                    mergeValue = curPermValue;
             }
 
             return { [modifier]: mergeValue };

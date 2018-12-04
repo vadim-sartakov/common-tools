@@ -8,7 +8,7 @@ describe("Security tests", () => {
         expect(result).to.be.deep.equal({ });
     });
 
-    it("Boolean", () => {
+    it.only("Boolean", () => {
         const user = { roles: ["USER", "MANAGER"] };
         const schema = { "USER": { read: true }, "MANAGER": { modify: true } };
         const result = getPermissions(user, schema);
@@ -32,12 +32,7 @@ describe("Security tests", () => {
             "MODERATOR": { readFilter: user => ({ department: user.department }) }
         };
         const result = getPermissions(user, schema);
-        expect(result).to.have.nested.property("readFilter");
-        const { readFilter } = result;
-        expect(readFilter).instanceOf(Array);
-        expect(readFilter.length).to.equal(2);
-        expect(readFilter[0]).to.deep.equal({ user: "user" });
-        expect(readFilter[1]).to.deep.equal({ department: "department" });
+        expect(result).to.deep.equal({ readFilter: [{ user: "user" }, { department: "department" }] }).nested.property("readFilter");
     });
 
     it("Mixing different types", () => {
