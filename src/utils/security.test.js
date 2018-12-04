@@ -40,7 +40,7 @@ describe("Security tests", () => {
         expect(readFilter[1]).to.deep.equal({ department: "department" });
     });
 
-    it.only("Mixing different types", () => {
+    it("Mixing different types", () => {
         const user = { id: "user", roles: ["USER", "MODERATOR"], department: "department" };
         const schema = {
             "USER": { read: true },
