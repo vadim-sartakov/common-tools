@@ -17,6 +17,13 @@ describe("Security tests", () => {
         expect(result).to.be.deep.equal({ read: true, modify: true });
     });
 
+    it("Admin", () => {
+        const user = { roles: ["MANAGER", "ADMIN"] };
+        const schema = { "USER": { read: true } };
+        const result = getPermissions(user, schema, "read", "modify");
+        expect(result).to.be.deep.equal({ read: true, modify: true });
+    });
+
     it("Object", () => {
         const user = { roles: ["USER", "MANAGER"] };
         const schema = {
