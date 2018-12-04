@@ -1,6 +1,6 @@
 export const getPermissions = (user, securitySchema) => {
 
-    return user.roles.reduce(( resultPermissions, curRole ) => {
+    return user.roles.reduce((resultPermissions, curRole) => {
 
         const curRolePermissions = securitySchema[curRole] || { };
         const mergedPermissions = Object.keys(curRolePermissions).reduce((mergeResult, modifier) => {
@@ -26,7 +26,7 @@ export const getPermissions = (user, securitySchema) => {
                     mergeValue = curPermValue;
             }
 
-            return { [modifier]: mergeValue };
+            return { ...mergeResult, [modifier]: mergeValue };
 
         }, { });
         return { ...resultPermissions, ...mergedPermissions };
