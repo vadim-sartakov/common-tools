@@ -1,12 +1,12 @@
-export const getPermissions = (user, securitySchema) => {
+export const getPermissions = (user, securitySchema, ...accessModifiers) => {
 
     return user.roles.reduce((resultPermissions, curRole) => {
 
         const curRolePermissions = securitySchema[curRole] || { };
-        const mergedPermissions = Object.keys(curRolePermissions).reduce((mergeResult, modifier) => {
+        const mergedPermissions = accessModifiers.reduce((mergeResult, modifier) => {
 
             const prevPermValue = resultPermissions[modifier];
-            let curPermValue = curRolePermissions[modifier];
+            let curPermValue = curRolePermissions[modifier] || (prevPermValue === true && true) || false;
             const valueType = typeof(curPermValue);
 
             if (valueType === "function") curPermValue = curPermValue(user);

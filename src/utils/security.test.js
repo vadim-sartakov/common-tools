@@ -4,14 +4,16 @@ import { getPermissions } from "./security";
 describe("Security tests", () => {
 
     it("No permission for specified roles", () => {
-        const result = getPermissions({ roles: ["USER", "MANAGER"] }, { "ACCOUNTANT": { read: true, modify: true } });
-        expect(result).to.be.deep.equal({ });
+        const user = { roles: ["USER", "MANAGER"] };
+        const schema = { "ACCOUNTANT": { read: true, modify: true } };
+        const result = getPermissions(user, schema, "read", "modify");
+        expect(result).to.be.deep.equal({ read: false, modify: false });
     });
 
     it("Boolean", () => {
         const user = { roles: ["USER", "MANAGER"] };
         const schema = { "USER": { read: true }, "MANAGER": { modify: true } };
-        const result = getPermissions(user, schema);
+        const result = getPermissions(user, schema, "read", "modify");
         expect(result).to.be.deep.equal({ read: true, modify: true });
     });
 
@@ -21,7 +23,7 @@ describe("Security tests", () => {
             "USER": { fields: { firstName: 1, lastname: 1 } },
             "MANAGER": { fields: { phoneNumber: 1 } }
         };
-        const result = getPermissions(user, schema);
+        const result = getPermissions(user, schema, "fields");
         expect(result).to.be.deep.equal({ fields: { firstName: 1, lastname: 1, phoneNumber: 1 } });
     });
 
@@ -31,7 +33,7 @@ describe("Security tests", () => {
             "USER": { readFilter: user => ({ user: user.id }) },
             "MODERATOR": { readFilter: user => ({ department: user.department }) }
         };
-        const result = getPermissions(user, schema);
+        const result = getPermissions(user, schema, "readFilter");
         expect(result).to.deep.equal({ readFilter: [{ user: "user" }, { department: "department" }] });
     });
 
@@ -41,7 +43,7 @@ describe("Security tests", () => {
             "USER": { fields: { firstName: 1, lastName: 1 } },
             "MODERATOR": { fields: { phoneNumber: 1 }, read: true }
         };
-        const result = getPermissions(user, schema);
+        const result = getPermissions(user, schema, "fields", "read");
         expect(result).to.deep.equal({
             fields: { firstName: 1, lastName: 1, phoneNumber: 1 },
             read: true
@@ -54,7 +56,7 @@ describe("Security tests", () => {
             "USER": { read: true },
             "MODERATOR": { read: user => ({ department: user.department }) }
         };
-        expect(() => getPermissions(user, schema)).to.throw("MixedTypes");
+        expect(() => getPermissions(user, schema, "read")).to.throw("MixedTypes");
     });
 
 });
