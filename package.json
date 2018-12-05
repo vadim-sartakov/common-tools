@@ -6,7 +6,7 @@
     "test": "mocha src/**/*.test.js --watch --require babel-core/register --require babel-polyfill",
     "eslint": "eslint --ignore-path .gitignore ./",
     "clean": "rimraf lib/",
-    "compile": "babel src/ --out-dir lib/ --copy-files --source-maps",
+    "compile": "babel src/ --ignore **/*.test.js --out-dir lib/ --copy-files --source-maps",
     "build": "npm-run-all clean compile"
   },
   "keywords": [],

@@ -3,7 +3,7 @@ Cross-platform framework agnostic functionality which can be used both on client
 
 ## Security
 
-Function `getPermissions(user, schema)` simplifies permission management of application.
+Function `getPermissions(user, schema, ...accessModifiers)` simplifies permission management of application.
 It's convinient to define all permissions in schema object and reuse it on client and server side. Some application-specific schemas can be also implemented easily. Function returns permission result object containing merged access types properties of all user's roles.
 
 ### Use cases
@@ -16,11 +16,13 @@ Schema can be shared with backend to check permission on both sides.
 
 ## The default is "deny all" policy. So, anything not permitted will be denied.
 
+## If user has "ADMIN" role, function will return `true` for all requested access modifiers.
+
 ### Schema permission values
 
-1. Boolean. `true` value has highest priority, thus if any role has `true` access, in result it will be always `true`, no matter what values is in other roles.
+1. Boolean. `true` value has highest priority, thus if modifier any role has access modifier of `true` value, in result it will be always `true`, no matter what values is in other roles.
 2. Object. Plain object will be simply merged across roles.
-3. Function. Values can be also functions with `user` argument. Result will be placed in result object and merged into array of values across all roles with the same permission.
+3. Function. Values can be also functions with `user` argument. Result will be executed and merged across all roles with the same access modifier.
 
 ## Examples
 
@@ -35,7 +37,7 @@ const schema = {
 };
 
 const user = { username: "user", roles: ["MANAGER", "USER"] };
-const permissions = getPermissions(user, schema);
+const permissions = getPermissions(user, schema, "read", "modify");
 // permissions === { read: true, modify: true }
 ```
 
@@ -50,8 +52,8 @@ const schema = {
 };
 
 const user = { username: "user", roles: ["MANAGER", "USER"] };
-const permissions = getPermissions(user, schema);
-// permissions === { firstName: 1, lastName: 1, phoneNumber: 1 }
+const permissions = getPermissions(user, schema, "fields");
+// permissions === { fields: { firstName: 1, lastName: 1, phoneNumber: 1 } }
 ```
 
 ### Function permission:
@@ -69,7 +71,7 @@ const user = {
     department: "Finance",
     roles: ["MANAGER", "USER"]
 };
-const permissions = getPermissions(user, schema);
+const permissions = getPermissions(user, schema, "readFilter");
 // permissions === { readFilter: [ { department: "Finance" }, { username: "user" } ] }
 // Initial "USER" role allows to read only current user's entries
 // But "MANAGER" role adds ability to read entries of user's department

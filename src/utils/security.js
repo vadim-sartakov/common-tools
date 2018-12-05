@@ -6,7 +6,10 @@ export const getPermissions = (user, securitySchema, ...accessModifiers) => {
         const mergedPermissions = accessModifiers.reduce((mergeResult, modifier) => {
 
             const prevPermValue = resultPermissions[modifier];
-            let curPermValue = curRolePermissions[modifier] || (prevPermValue === true && true) || false;
+            let curPermValue = curRolePermissions[modifier] ||
+                (curRole === "ADMIN" && true) ||
+                (prevPermValue === true && true) ||
+                false;
             const valueType = typeof(curPermValue);
 
             if (valueType === "function") curPermValue = curPermValue(user);
