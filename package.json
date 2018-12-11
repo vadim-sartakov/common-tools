@@ -12,9 +12,7 @@
   "keywords": [],
   "author": "Vadim Sartakov",
   "license": "ISC",
-  "dependencies": {
-    "lodash": "^4.17.11"
-  },
+  "dependencies": {},
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
