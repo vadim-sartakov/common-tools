@@ -97,6 +97,42 @@ describe("Object filter", () => {
             ]});
         });
 
+        it("Exclusive fields and merge with additional and reordered rows", () => {
+            const objectToFilter = { array: [
+                { id: 0, first: "1", second: "1" },
+                { id: 2, first: "333", second: "333" },
+                { id: 1, first: "2", second: "2" },
+                { id: 3, first: "4", second: "4" }
+            ]};
+            const result = filterObject(objectToFilter, { "array.first": 0 }, { array: [
+                { id: 0, first: "1", second: "1" },
+                { id: 1, first: "2", second: "2" },
+                { id: 2, first: "3", second: "3" },
+            ]});
+            expect(result).to.deep.equal({ array: [
+                { id: 0, first: "1", second: "1" },
+                { id: 2, first: "3", second: "333" },
+                { id: 1, first: "2", second: "2" },
+                { id: 3, second: "4" }
+            ]});
+        });
+
+        it("Inclusive fields and merge with deleted and reordered rows", () => {
+            const objectToFilter = { array: [
+                { id: 0, first: "1", second: "1" },
+                { id: 2, first: "333", second: "333" },
+            ]};
+            const result = filterObject(objectToFilter, { "array.first": 1 }, { array: [
+                { id: 0, first: "1", second: "1" },
+                { id: 1, first: "2", second: "2" },
+                { id: 2, first: "3", second: "3" },
+            ]});
+            expect(result).to.deep.equal({ array: [
+                { id: 0, first: "1", second: "1" },
+                { id: 2, first: "333", second: "3" }
+            ]});
+        });
+
     });
 
 });
