@@ -5,7 +5,7 @@ const shouldRestoreValue = (fullProperty, { exclusive, fields }) => {
 };
 
 const shouldProcessObjectRecursively = (value, fields, fullProperty) => {
-    return typeof(value) === "object" && Object.keys(fields).some(field => field.startsWith(fullProperty));
+    return typeof(value) === "object" && Object.keys(fields).some(field => field.startsWith(fullProperty + "."));
 };
 
 const filterObjectRecursively = (payload, initialObject = {}, rootProperty, { fields, exclusive }) => {
