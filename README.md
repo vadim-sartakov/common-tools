@@ -90,7 +90,7 @@ const permissions = getPermissions(user, schema, "readFilter");
 Arguments:
 - object - object to filter
 - fields - projection object with full properties path as keys and 0/1 as values. It is allowed to use nested properties and array properties as well.
-- initialObject - object to take values from. If property should be filtered according to projection, initial value from this object is taken. This paramater is not required. If not specified, filtered properties will be removed.
+- initialObject - object to take values from. If property should be filtered according to projection, initial value from this object is taken. To correctly restore array element value, rows should contain unique `id` properties. This paramater is not required. If not specified, filtered properties will be removed.
 
 
 
