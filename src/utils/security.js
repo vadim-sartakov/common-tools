@@ -8,10 +8,10 @@ export const getPermissions = (user, securitySchema, ...accessModifiers) => {
             const prevPermValue = resultPermissions[modifier];
             let curPermValue = curRolePermissions[modifier] ||
                 (curRole === "ADMIN" && true) ||
-                (prevPermValue === true && true) ||
+                prevPermValue ||
                 false;
             const valueType = typeof(curPermValue);
-
+            
             if (valueType === "function") curPermValue = curPermValue(user);
             if (prevPermValue && typeof(prevPermValue) !== typeof(curPermValue)) throw new Error("MixedTypes");
 
@@ -33,6 +33,6 @@ export const getPermissions = (user, securitySchema, ...accessModifiers) => {
 
         }, { });
         return { ...resultPermissions, ...mergedPermissions };
-    }, { });
+    }, securitySchema.ALL || { });
 
 };

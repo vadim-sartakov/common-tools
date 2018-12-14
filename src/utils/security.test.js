@@ -34,6 +34,25 @@ describe("Security tests", () => {
         expect(result).to.be.deep.equal({ fields: { firstName: 1, lastname: 1, phoneNumber: 1 } });
     });
 
+    it("Object with `ALL` role only", () => {
+        const user = { roles: ["USER", "MANAGER"] };
+        const schema = {
+            "ALL": { fields: { firstName: 1, lastname: 1 } }
+        };
+        const result = getPermissions(user, schema, "fields");
+        expect(result).to.be.deep.equal({ fields: { firstName: 1, lastname: 1 } });
+    });
+
+    it("Object with `ALL` and scecified role", () => {
+        const user = { roles: ["USER", "MANAGER"] };
+        const schema = {
+            "ALL": { fields: { firstName: 1, lastname: 1 } },
+            "USER": { fields: { phoneNumber: 1 } }
+        };
+        const result = getPermissions(user, schema, "fields");
+        expect(result).to.be.deep.equal({ fields: { firstName: 1, lastname: 1, phoneNumber: 1 } });
+    });
+
     it("Function", () => {
         const user = { id: "user", roles: ["USER", "MODERATOR"], department: "department" };
         const schema = {

@@ -23,6 +23,8 @@ Schema can be shared with backend to check permission on both sides.
 
 ### The default is "deny all" policy. So, anything not permitted will be denied.
 
+### There is predefined "ALL" role which simplifies generic permission definition. Any concrete permission will be always merged with "ALL".
+
 ### If user has "ADMIN" role, function will return `true` for all requested access modifiers.
 
 ### Schema permission values
@@ -91,8 +93,6 @@ Arguments:
 - object - object to filter
 - fields - projection object with full properties path as keys and 0/1 as values. It is allowed to use nested properties and array properties as well.
 - initialObject - object to take values from. If property should be filtered according to projection, initial value from this object is taken. To correctly restore array element value, rows should contain unique `id` properties. This paramater is not required. If not specified, filtered properties will be removed.
-
-
 
 ## Examples
 
