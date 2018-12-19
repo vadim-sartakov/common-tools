@@ -10,6 +10,13 @@ describe("Security tests", () => {
         expect(result).to.be.deep.equal({ read: false, update: false });
     });
 
+    it("Admin", () => {
+        const user = { roles: ["ADMIN"] };
+        const schema = { "ACCOUNTANT": { read: true, update: true } };
+        const result = getPermissions(user, schema, "read", "update");
+        expect(result).to.be.deep.equal({ read: true, update: true });
+    });
+
     it("Flat objects", () => {
         const user = { roles: ["USER", "MANAGER"] };
         const schema = { "USER": { read: true }, "MANAGER": { update: true } };
@@ -42,10 +49,12 @@ describe("Security tests", () => {
         const user = { id: "userId", roles: ["USER", "MANAGER"] };
         const schema = {
             "USER": {
-                read: { filter: user => ({ user: user.id }) }
+                read: {
+                    filter: user => ({ user: user.id })
+                }
             }
         };
-        const result = getPermissions(user, schema, "read", "update");
+        const result = getPermissions(user, schema, "read");
         expect(result).to.be.deep.equal({
             read: {
                 filter: { user: "userId" }
@@ -60,12 +69,12 @@ describe("Security tests", () => {
             "MANAGER": { read: true },
             "ACCOUNTANT": { read: { filter: { department: "depId" } } }
         };
-        const result = getPermissions(user, schema, "read", "update");
+        const result = getPermissions(user, schema, "read");
         expect(result).to.be.deep.equal({ read: true });
     });
 
     it("Expanding access property (granting more access) in one of the roles", () => {
-        const user = { roles: ["USER", "MANAGER"] };
+        const user = { roles: ["USER", "MANAGER", "ACCOUNTANT"] };
         const schema = {
             "USER": {
                 read: { filter: { user: "userId" }, projection: "fieldOne" }
@@ -73,11 +82,15 @@ describe("Security tests", () => {
             "MANAGER": {
                 read: { projection: "fieldTwo" },
                 update: true
+            },
+            "ACCOUNTANT": {
+                read: { filter: { department: "depId" }, projection: "fieldThree" },
+                update: true
             }
         };
         const result = getPermissions(user, schema, "read", "update");
         expect(result).to.be.deep.equal({
-            read: { projection: "fieldOne fieldTwo" },
+            read: { projection: "fieldOne fieldTwo fieldThree" },
             update: true
         });
     });

@@ -1,38 +1,49 @@
-export const getPermissions = (user, securitySchema, ...accessModifiers) => {
+export const getPermissions = (user, schema, ...accessKeys) => {
 
-    return user.roles.reduce((resultPermissions, curRole) => {
+    return user.roles.reduce((permissions, role) => {
 
-        const curRolePermissions = securitySchema[curRole] || { };
-        const mergedPermissions = accessModifiers.reduce((mergeResult, modifier) => {
+        const rolePermissions = schema[role] || { };
+        const mergedAccesses = accessKeys.reduce((mergedAccesses, accessKey) => {
 
-            const prevPermValue = resultPermissions[modifier];
-            let curPermValue = curRolePermissions[modifier] ||
-                (curRole === "ADMIN" && true) ||
-                prevPermValue ||
-                false;
-            const valueType = typeof(curPermValue);
+            const prevPermission = permissions[accessKey];
+            let permission = rolePermissions[accessKey] || (role === "ADMIN" && true) || false;
+            if ((prevPermission && permission === false) || prevPermission === true) return mergedAccesses;
             
-            if (valueType === "function") curPermValue = curPermValue(user);
-            if (prevPermValue && typeof(prevPermValue) !== typeof(curPermValue)) throw new Error("MixedTypes");
+            if (typeof(permission) === "object") {
 
-            let mergeValue;
-            switch (valueType) {
-                case "object":
-                    mergeValue = { ...prevPermValue, ...curPermValue };
-                    break;
-                case "function":
-                    mergeValue = [];
-                    prevPermValue && mergeValue.push(...prevPermValue);
-                    mergeValue.push(curPermValue);
-                    break;
-                default:
-                    mergeValue = curPermValue;
+                // Absense of previous modifier indicates that access has been extended by this particular modifier
+                /*const initialMergedAccess = (prevPermission && Object.keys(prevPermission).reduce((prev, key) => {
+                    return Object.keys(permission).some(permKey => permKey === key) ? { ...prev, key } : prev;
+                }), { }) || { };*/
+
+                permission = Object.keys(permission).reduce((mergedAccess, modifierKey) => {
+
+                    const prevModifier = mergedAccess && mergedAccess[modifierKey];
+                    let curModifier = permission[modifierKey];
+
+                    if (typeof(curModifier) === "function") curModifier = curModifier(user);
+
+                    let mergedModifier;
+                    switch(typeof(curModifier)) {
+                        case "object":
+                            mergedModifier = { ...prevModifier, ...curModifier };
+                            break;
+                        case "string":
+                            mergedModifier = `${prevModifier ? prevModifier + " " : ""}` + curModifier;
+                            break;
+                        default:
+                            mergedModifier = curModifier;
+                    }
+
+                    return { ...mergedAccess, [modifierKey]: mergedModifier };
+
+                }, prevPermission || {});
             }
 
-            return { ...mergeResult, [modifier]: mergeValue };
+            return { ...mergedAccesses, [accessKey]: permission };
 
-        }, { });
-        return { ...resultPermissions, ...mergedPermissions };
-    }, securitySchema.ALL || { });
+        }, permissions.all || { });
+        return { ...permissions, ...mergedAccesses };
+    }, schema.ALL || { });
 
 };
