@@ -6,21 +6,26 @@ export const getPermissions = (user, schema, ...accessKeys) => {
         const mergedAccesses = accessKeys.reduce((mergedAccesses, accessKey) => {
 
             const prevPermission = permissions[accessKey];
-            let permission = rolePermissions[accessKey] || (role === "ADMIN" && true) || rolePermissions.all || false;
-            if ((prevPermission && permission === false) || prevPermission === true) return mergedAccesses;
+            let curPermission = rolePermissions[accessKey] || (role === "ADMIN" && true) || rolePermissions.all || false;
+            if ((prevPermission && curPermission === false) || prevPermission === true) return mergedAccesses;
             
-            if (typeof(permission) === "object") {
+            if (typeof(curPermission) === "object") {
 
                 // Absense of previous modifier indicates that access has been extended by this particular modifier
-                /*const initialMergedAccess = (prevPermission && Object.keys(prevPermission).reduce((prev, key) => {
-                    return Object.keys(permission).some(permKey => permKey === key) ? { ...prev, key } : prev;
-                }), { }) || { };*/
+                // Setting missing modifier to false
+                const curPermissionKeys = Object.keys(curPermission);
+                prevPermission && Object.keys(prevPermission).forEach(prevPermKey => {
+                    if (!curPermissionKeys.some(curPermKey => curPermKey === prevPermKey)) {
+                        curPermission[prevPermKey] = false;
+                    }
+                });
 
-                permission = Object.keys(permission).reduce((mergedAccess, modifierKey) => {
+                curPermission = Object.keys(curPermission).reduce((mergedAccess, modifierKey) => {
 
                     const prevModifier = mergedAccess && mergedAccess[modifierKey];
-                    let curModifier = permission[modifierKey];
+                    let curModifier = curPermission[modifierKey];
 
+                    if (prevModifier === false) return mergedAccess;
                     if (typeof(curModifier) === "function") curModifier = curModifier(user);
 
                     let mergedModifier;
@@ -38,9 +43,10 @@ export const getPermissions = (user, schema, ...accessKeys) => {
                     return { ...mergedAccess, [modifierKey]: mergedModifier };
 
                 }, prevPermission || {});
+
             }
 
-            return { ...mergedAccesses, [accessKey]: permission };
+            return { ...mergedAccesses, [accessKey]: curPermission };
 
         }, { });
         return { ...permissions, ...mergedAccesses };

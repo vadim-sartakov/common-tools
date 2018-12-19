@@ -90,7 +90,7 @@ describe("Security tests", () => {
         };
         const result = getPermissions(user, schema, "read", "update");
         expect(result).to.be.deep.equal({
-            read: { projection: "fieldOne fieldTwo fieldThree" },
+            read: { filter: false, projection: "fieldOne fieldTwo fieldThree" },
             update: true
         });
     });
