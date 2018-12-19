@@ -2,11 +2,11 @@ export const getPermissions = (user, schema, ...accessKeys) => {
 
     return user.roles.reduce((permissions, role) => {
 
-        const rolePermissions = schema[role] || { };
+        const rolePermissions = schema[role] || schema.ALL || { };
         const mergedAccesses = accessKeys.reduce((mergedAccesses, accessKey) => {
 
             const prevPermission = permissions[accessKey];
-            let permission = rolePermissions[accessKey] || (role === "ADMIN" && true) || false;
+            let permission = rolePermissions[accessKey] || (role === "ADMIN" && true) || rolePermissions.all || false;
             if ((prevPermission && permission === false) || prevPermission === true) return mergedAccesses;
             
             if (typeof(permission) === "object") {
@@ -42,8 +42,8 @@ export const getPermissions = (user, schema, ...accessKeys) => {
 
             return { ...mergedAccesses, [accessKey]: permission };
 
-        }, permissions.all || { });
+        }, { });
         return { ...permissions, ...mergedAccesses };
-    }, schema.ALL || { });
+    }, { });
 
 };
