@@ -19,7 +19,14 @@ describe("Security tests", () => {
 
     it("Flat objects", () => {
         const user = { roles: ["USER", "MANAGER"] };
-        const schema = { "USER": { read: true }, "MANAGER": { update: true } };
+        const schema = { "USER": { read: true, update: { projection: "field" } }, "MANAGER": { update: true } };
+        const result = getPermissions(user, schema, "read", "update");
+        expect(result).to.be.deep.equal({ read: true, update: true });
+    });
+
+    it("Mixed values with `true` in one of the roles", () => {
+        const user = { roles: ["USER", "MANAGER"] };
+        const schema = { "USER": { read: true, update: { projection: "field" } }, "MANAGER": { update: true } };
         const result = getPermissions(user, schema, "read", "update");
         expect(result).to.be.deep.equal({ read: true, update: true });
     });
@@ -93,6 +100,20 @@ describe("Security tests", () => {
             read: { filter: false, projection: "fieldOne fieldTwo fieldThree" },
             update: true
         });
+    });
+
+    it("All role", () => {
+        const user = { roles: ["USER", "MANAGER"] };
+        const schema = { "ALL": { read: true, update: true } };
+        const result = getPermissions(user, schema, "read", "update");
+        expect(result).to.be.deep.equal({ read: true, update: true });
+    });
+
+    it("All permission", () => {
+        const user = { roles: ["USER", "MANAGER"] };
+        const schema = { "MANAGER": { all: true } };
+        const result = getPermissions(user, schema, "read", "update");
+        expect(result).to.be.deep.equal({ read: true, update: true });
     });
 
     it("All role with all permissions", () => {

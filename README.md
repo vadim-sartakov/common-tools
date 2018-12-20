@@ -9,7 +9,7 @@ It's convinient to define all permissions in schema object and reuse it on clien
 Arguments:
 - user - Object - plain object with "roles" property which is a simple array of strings
 - schema - Object - object describing permission by roles
-- ...accessModifiers - String - requested access modifiers to get from user roles
+- ...accessKeys - String - requested access list to get from user roles
 
 Returns - permission result object containing merged access types properties of all user's roles
 
@@ -23,67 +23,94 @@ Schema can be shared with backend to check permission on both sides.
 
 ### The default is "deny all" policy. So, anything not permitted will be denied.
 
-### There is predefined "ALL" role which simplifies generic permission definition. Any concrete permission will be always merged with "ALL".
-
-### If user has "ADMIN" role, function will return `true` for all requested access modifiers.
-
-### Schema permission values
-
-1. Boolean. `true` value has highest priority, thus if any role has access modifier of `true` value, in result it will be always `true`, no matter what values is in other roles.
-2. Object. Plain object will be simply merged across roles.
-3. Function. Values can be also functions with `user` argument. Result will be executed and merged across all roles with the same access modifier.
+### 
 
 ## Examples
 
-### Simple permissions:
+### Simple permissions.
+`true` permission value has always highest priority. If there are other values (such as objects) and `true`, result will be always `true`.
 
 ```javascript
-import { getPermissions } from "shared-tools";
-
-const schema = {
-    "MANAGER": { modify: true },
-    "USER": { read: true }
-};
-
-const user = { username: "user", roles: ["MANAGER", "USER"] };
-const permissions = getPermissions(user, schema, "read", "modify");
-// permissions === { read: true, modify: true }
+const user = { roles: ["USER", "MANAGER"] };
+const schema = { "USER": { read: true, update: { projection: "field" } }, "MANAGER": { update: true } };
+const result = getPermissions(user, schema, "read", "update");
+expect(result).to.be.deep.equal({ read: true, update: true });
 ```
 
-### Object permission:
-
+### Nested objects
+Plain objects will be merged, strings joined with space.
 ```javascript
-import { getPermissions } from "shared-tools";
-
+const user = { roles: ["USER", "MANAGER"] };
 const schema = {
-    "MANAGER": { fields: { phoneNumber: 1 } },
-    "USER": { fields: { firstName: 1, lastName: 1 } }
+    "USER": {
+        read: { filter: { user: "userId" }, projection: "fieldOne" }
+    },
+    "MANAGER": {
+        read: { filter: { department: "depId" }, projection: "fieldTwo" },
+        update: true
+    }
 };
-
-const user = { username: "user", roles: ["MANAGER", "USER"] };
-const permissions = getPermissions(user, schema, "fields");
-// permissions === { fields: { firstName: 1, lastName: 1, phoneNumber: 1 } }
+const result = getPermissions(user, schema, "read", "update");
+expect(result).to.be.deep.equal({
+    read: {
+        filter: { user: "userId", department: "depId" },
+        projection: "fieldOne fieldTwo"
+    },
+    update: true
+});
 ```
 
-### Function permission:
+### Expanding access modifier in one of the role
+There are cases when some role describes spicific access modifiers and other role don't have such retricted access. In that case, expanded modifier will have `false` value.
 
 ```javascript
-import { getPermissions } from "shared-tools";
-
+const user = { roles: ["USER", "MANAGER", "ACCOUNTANT"] };
 const schema = {
-    "MANAGER": { readFilter: { user => ({ department: user.department }) } },
-    "USER": { readFilter: { user => ({ username: user.username }) } }
+    "USER": {
+        read: { filter: { user: "userId" }, projection: "fieldOne" }
+    },
+    "MANAGER": {
+        read: { projection: "fieldTwo" },
+        update: true
+    },
+    "ACCOUNTANT": {
+        read: { filter: { department: "depId" }, projection: "fieldThree" },
+        update: true
+    }
 };
+const result = getPermissions(user, schema, "read", "update");
+expect(result).to.be.deep.equal({
+    read: { filter: false, projection: "fieldOne fieldTwo fieldThree" },
+    update: true
+});
+```
 
-const user = {
-    username: "user",
-    department: "Finance",
-    roles: ["MANAGER", "USER"]
-};
-const permissions = getPermissions(user, schema, "readFilter");
-// permissions === { readFilter: [ { department: "Finance" }, { username: "user" } ] }
-// Initial "USER" role allows to read only current user's entries
-// But "MANAGER" role adds ability to read entries of user's department
+### Admin
+If user has "ADMIN" role, function will return `true` for all requested access modifiers.
+
+```javascript
+const user = { roles: ["ADMIN"] };
+const schema = { "ACCOUNTANT": { read: true, update: true } };
+const result = getPermissions(user, schema, "read", "update");
+expect(result).to.be.deep.equal({ read: true, update: true });
+```
+
+### Special "ALL" role
+`ALL` role simplifies generic permission definition. Any specific permission will be always merged with "ALL".
+```javascript
+const user = { roles: ["USER", "MANAGER"] };
+const schema = { "ALL": { read: true, update: true } };
+const result = getPermissions(user, schema, "read", "update");
+expect(result).to.be.deep.equal({ read: true, update: true });
+```
+
+### Special "all" access
+Simplifies repetitive access definition
+```javascript
+const user = { roles: ["USER", "MANAGER"] };
+const schema = { "MANAGER": { all: true } };
+const result = getPermissions(user, schema, "read", "update");
+expect(result).to.be.deep.equal({ read: true, update: true });
 ```
 
 ## Object filter
@@ -96,9 +123,58 @@ Arguments:
 
 ## Examples
 
+### Flat objects
 ```javascript
-const object = { first: "1", second: "2", third: "3" };
-const result = filterObject(object, { first: 0 });
-// result === { second: "2", third: "3" };
+const removeResult = filterObject(object, { first: 0 });
+expect(removeResult).to.deep.equal({ second: "2", third: "3" });
+
+const mergeResult = filterObject(object, { first: 0 }, { first: "111" });
+expect(mergeResult).to.deep.equal({ first: "111", second: "2", third: "3" });
+
 ```
 
+### Nested objects
+```javascript
+const result = filterObject(object, { "nested.first": 0 });
+expect(result).to.deep.equal({ nested: { second: "2", third: "3" } });
+```
+
+### Remove arrays properties
+```javascript
+const object = { array: [
+    { id: 0, first: "1", second: "1" },
+    { id: 1, first: "2", second: "2" },
+    { id: 2, first: "3", second: "3" },
+]};
+const filterResult = filterObject(object, { "array.first": 0 });
+expect(filterResult).to.deep.equal({ array: [
+    { id: 0, second: "1" },
+    { id: 1, second: "2" },
+    { id: 2, second: "3" },
+]});
+```
+
+### Merge array rows
+If field is excluded by projection and merged with some value, function will restore field values from objectToMerge (3-rd argument)
+```javascript
+
+// Initial object
+const object = { array: [
+    { id: 0, first: "1", second: "1" },
+    { id: 1, first: "2", second: "2" },
+    { id: 2, first: "3", second: "3" },
+]};
+                            // Field is prohibited to modify    This is initial value to take values from
+const mergeResult = filterObject(object, { "array.first": 0 }, { array: [
+    { id: 0, first: "111", second: "1" },
+    { id: 1, first: "2", second: "2" },
+    { id: 2, first: "3", second: "333" },
+]});
+expect(mergeResult).to.deep.equal({ array: [
+            // Value restored since it's not allowed to modify
+    { id: 0, first: "111", second: "1" },
+    { id: 1, first: "2", second: "2" },
+                            // This value was successfully changed
+    { id: 2, first: "3", second: "3" },
+]});
+```
