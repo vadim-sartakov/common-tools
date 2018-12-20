@@ -85,6 +85,25 @@ expect(result).to.be.deep.equal({
 });
 ```
 
+### Functions
+Permission value could also be function. It's used as callback, executes with `user` argument and it should return permission value.
+```javascript
+const user = { id: "userId", roles: ["USER", "MANAGER"] };
+const schema = {
+    "USER": {
+        read: {
+            filter: user => ({ user: user.id })
+        }
+    }
+};
+const result = getPermissions(user, schema, "read");
+expect(result).to.be.deep.equal({
+    read: {
+        filter: { user: "userId" }
+    }
+});
+```
+
 ### Admin
 If user has "ADMIN" role, function will return `true` for all requested access modifiers.
 
