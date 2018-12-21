@@ -40,3 +40,4 @@ export const filterObject = (object, fields, initialObject) => {
     const exclusive = isExclusiveProjection(fields);
     return filterObjectRecursively(object, initialObject, "", { fields, exclusive });
 };
+
