@@ -31,7 +31,7 @@ export const max = (maxValue, message) => value => {
     return valueToCheck > maxValue ? (message || format("Should be not more than %s", maxValue)) : undefined;
 };
 
-export const uniqueArray = (message, comparator = (x, y) => x === y) => (value, path, allValues) => {
+export const uniqueArray = (comparator = (x, y) => x === y, message) => (value, path, allValues) => {
     if (valueIsAbsent(value)) return;
     // Removing index from path
     const arrayPath = path.replace(/\[\d+\]$/, "");
@@ -42,34 +42,55 @@ export const uniqueArray = (message, comparator = (x, y) => x === y) => (value, 
     return occurrences > 1 ? (message || "Value is not unique") : undefined;
 };
 
-export const uniqueObject = (message, comparator, ...paths) => {
+const validateValue = (value, validators, fullPath, rootObject) => {
+    if (!Array.isArray(validators)) validators = [validators];
+    const validationResult = validators.reduce((prev, validator) => {
+        const error = validator(value, fullPath, rootObject);
+        return error ? [...prev, error] : prev;
+    }, []);
+    return validationResult;
+};
+
+const validateProperty = () => {
 
 };
 
-const validateRecursively = (object, rootProperty, validationSchema, sourceObject) => {
+const validateObjectRecursively = (object, path, schema, rootObject, rootSchema) => {
     
-    return Object.keys(object).reduce((prev, property) => {
+    const { _root, ...rest } = schema;
+    const initialErrors = (_root && validateValue(object, _root)) || { };
 
-        const fullProperty = `${rootProperty ? rootProperty + "." : ""}${property}`;
-        const value = object[property];
-        const validators = validationSchema[property];
+    return Object.keys(rest).reduce((prev, curProperty) => {
 
-        const validationResult = validators.reduce((prev, validator) => {
-            const isValid = validator(value, fullProperty, sourceObject);
-        }, {});
+        const fullPath = `${path ? path + "." : ""}${curProperty}`;
+        const validators = schema[curProperty];
+        const propertyValue = object[curProperty];
 
-        /*if (Array.isArray(value)) {
-            value.forEach(item => validateRecursively(object, ));
+        let validationResult;
+        if (Array.isArray(propertyValue)) {
+            validationResult = propertyValue.reduce((prev, item, index) => {
+                const arrayPath = `${fullPath}[${index}]`;
+                let itemValidationResult;
+                if (typeof(item) === "object") {
+                    itemValidationResult = validateObjectRecursively(propertyValue, arrayPath, validators, rootObject, rootSchema);
+                } else {
+                    itemValidationResult = validateValue(propertyValue, validators, arrayPath, rootObject);
+                }
+                return { ...prev, [arrayPath]: itemValidationResult };
+                //validateRecursively(object, );
+            }, { });
         } else if (typeof(value) === "object") {
+            validationResult = validateObjectRecursively(propertyValue, fullPath, validators, rootObject, rootSchema);
+        } else {
+            validationResult = validateValue(propertyValue, validators, fullPath, rootObject);
+        }
 
-        }*/
+        return { ...prev, [fullPath]: validationResult };
 
-        return validateRecursively(object[property], validationSchema[property], validationSchema);
-
-    }, {});
+    }, initialErrors);
 
 };
 
 export const validate = (object, schema) => {
-    return validateRecursively(object, "", schema, object);
+    return validateObjectRecursively(object, "", schema, object, schema);
 };
