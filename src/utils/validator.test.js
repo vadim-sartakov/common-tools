@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { validate, required, match, min, max, unique } from "./validator";
+import { required, match, min, max, uniqueArray, uniqueObject, validate, validateAsync } from "./validator";
 
 describe("Validator", () => {
 
@@ -140,24 +140,24 @@ describe("Validator", () => {
         describe("Unique", () => {
 
             it("Valid", () => {
-                const validator = unique();
+                const validator = uniqueArray();
                 expect(validator("1", "array[0]", { array: ["1", "2"] })).not.to.be.ok;
             });
 
             it("Invalid", () => {
-                const validator = unique();
+                const validator = uniqueArray();
                 expect(validator("1", "array[0]", { array: ["1", "2", "1", "2"] })).to.equal("Value is not unique");
                 expect(validator("2", "array[0]", { array: ["1", "2", "1", "2"] })).to.equal("Value is not unique");
             });
 
             it("Mixed", () => {
-                const validator = unique();
+                const validator = uniqueArray();
                 expect(validator("1", "array[0]", { array: ["1", "2", "1", "2"] })).to.equal("Value is not unique");
                 expect(validator("3", "array[0]", { array: ["1", "2", "1", "2"] })).not.to.be.ok;
             });
 
             it("Custom message and comparator", () => {
-                const validator = unique("Custom message", (x, y) => x.id === y.id);
+                const validator = uniqueArray("Custom message", (x, y) => x.id === y.id);
                 expect(validator({ id: "1"}, "array[0]", { array: [{ id: "1"} , { id: "2" }] })).not.to.be.ok;
                 expect(validator({ id: "1"}, "array[0]", { array: [{ id: "1"} , { id: "2" }, { id: "1"}] })).to.equal("Custom message");
             });
@@ -168,20 +168,76 @@ describe("Validator", () => {
 
     describe.skip("Validate", () => {
 
-        it("Pass flat object", () => {
+        it("Valid flat object", () => {
             const object = { firstName: "Bill", lastName: "Gates" };
             const schema = { firstName: required(), lastName: required() };
-            const result = validate(object, schema);
-            expect(result).to.deep.equal({ });
+            expect(validate(object, schema)).not.to.be.ok;
         });
 
-        it("Fail flat object", () => {
-            const object = { firstName: "Bill", lastName: "Gates" };
-            const schema = {
-                firstName: { validator: value => value !== "Bill", message: "" },
-                lastName: value => value !== "Gates"
-            };
-            const result = validate(object, schema);
+        it("Invalid flat object", () => {
+            const object = { };
+            const schema = { firstName: required(), lastName: required() };
+            expect(validate(object, schema)).to.deep.equal({
+                "firstName": "Value is required",
+                "lastName": "Value is required",
+            });
+        });
+
+        it("Invalid nested object", () => {
+            const object = { };
+            const schema = { field: { nested: required() } };
+            expect(validate(object, schema)).to.deep.equal({ "field.nested": "Value is required" });
+        });
+
+        it("Invalid custom validators", () => {
+            const object = { firstName: "", lastName: "Gates" };
+            const schema = { firstName: required(), lastName: (value, path, allValues) => "Invalid" };
+            expect(validate(object, schema)).to.deep.equal({
+                "firstName": "Value is required",
+                "lastName": "Invalid",
+            });
+        });
+
+        it("Invalid string array", () => {
+            const object = { array: ["1", "2", "3", "1"] };
+            const schema = { array: uniqueArray() };
+            expect(validate(object, schema)).to.deep.equal({
+                "array[0]": "Value is not unique",
+                "array[3]": "Value is not unique",
+            });
+        });
+
+        it("Invalid object array", () => {
+            const object = { array: [{ id: "1" }, { id: "2" }, { id: "3" }, { id: "1" }] };
+            const schema = { array: uniqueArray(undefined, (x, y) => x.id === y.id) };
+            expect(validate(object, schema)).to.deep.equal({
+                "array[0]": "Value is not unique",
+                "array[3]": "Value is not unique",
+            });
+        });
+
+        it("Root validation", () => {
+            const error = "Passwords should be equal";
+            const object = { password: "pwd", repeatPassword: "pw" };
+            const schema = { _root: value => {
+                return value.password === value.repeatPassword ? undefined : { "password": error, "repeatPassword": error };
+            }};
+            expect(validate(object, schema)).to.deep.equal({ "password": error, "repeatPassword": error });
+            object.repeatPassword = "pwd";
+            expect(validate(object, schema)).not.to.be.ok;
+        });
+
+        it("Async validate", async () => {
+            const object = { field: "value" };
+            const schema = { field: async () => "Invalid" };
+            expect(await validate(object, schema)).to.equal("Invalid");
+        });
+
+        it("Async root validate", async () => {
+            const error = "Username is not unique";
+            const object = { username: "user" };
+            const schema = { _root: async value => ({ username: error }) };
+            expect(await validate(object, schema)).to.equal({ username: error });
         });
 
     });
