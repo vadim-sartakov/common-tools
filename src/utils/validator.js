@@ -64,7 +64,7 @@ const validateProperty = (prev, propertyValue, fullPath, validators, rootObject,
         }, { });
         return { ...prev, ...validationResult };
     } else if (typeof(validators) === "object") {
-        validationResult = validateObjectRecursively(propertyValue, fullPath, validators, rootObject, rootSchema);
+        validationResult = validateObject(propertyValue, fullPath, validators, rootObject, rootSchema);
     } else {
         validationResult = validateValue(propertyValue, validators, fullPath, rootObject);
     }
@@ -77,7 +77,7 @@ const validateProperty = (prev, propertyValue, fullPath, validators, rootObject,
 
 };
 
-const validateObjectRecursively = (object = { }, path, schema, rootObject, rootSchema) => {
+const validateObject = (object = { }, path, schema, rootObject, rootSchema) => {
     
     const { _root, ...rest } = schema;
     const initialErrors = (_root && validateValue(object, _root)) || { };
@@ -94,5 +94,5 @@ const validateObjectRecursively = (object = { }, path, schema, rootObject, rootS
 };
 
 export const validate = (object, schema) => {
-    return validateObjectRecursively(object, "", schema, object, schema);
+    return validateObject(object, "", schema, object, schema);
 };

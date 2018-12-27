@@ -224,7 +224,7 @@ describe("Validator", () => {
 
         it("Invalid object array", () => {
             const object = { array: [{ id: "1" }, { id: "2" }, { id: "3" }, { id: "1" }] };
-            const schema = { array: uniqueArray(undefined, (x, y) => x.id === y.id) };
+            const schema = { array: uniqueArray((x, y) => x.id === y.id) };
             expect(validate(object, schema)).to.deep.equal({
                 "array[0]": "Value is not unique",
                 "array[3]": "Value is not unique",
