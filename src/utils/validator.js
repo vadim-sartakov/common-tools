@@ -44,11 +44,37 @@ export const uniqueArray = (comparator = (x, y) => x === y, message) => (value, 
 
 const validateValue = (value, validators, fullPath, rootObject) => {
     if (!Array.isArray(validators)) validators = [validators];
-    const validationResult = validators.reduce((prev, validator) => {
-        const error = validator(value, fullPath, rootObject);
-        return error ? [...prev, error] : prev;
-    }, []);
-    return validationResult;
+    // Returning only first error
+    let error;
+    for (let i = 0; i < validators.length; i++) {
+        const validator = validators[i];
+        error = validator(value, fullPath, rootObject);
+        if (error) break;
+    }
+    return error;
+};
+
+const validateProperty = (prev, propertyValue, fullPath, validators, rootObject, rootSchema) => {
+
+    let validationResult;
+    if (Array.isArray(propertyValue)) {
+        validationResult = propertyValue.reduce((prev, item, index) => {
+            const arrayPath = `${fullPath}[${index}]`;
+            return validateProperty(prev, item, arrayPath, validators, rootObject, rootSchema);
+        }, { });
+        return { ...prev, ...validationResult };
+    } else if (typeof(validators) === "object") {
+        validationResult = validateObjectRecursively(propertyValue, fullPath, validators, rootObject, rootSchema);
+    } else {
+        validationResult = validateValue(propertyValue, validators, fullPath, rootObject);
+    }
+
+    if (typeof(validationResult) === "object") {
+        return { ...prev, ...validationResult };
+    } else {
+        return validationResult ? { ...prev, [fullPath]: validationResult } : prev;
+    }
+
 };
 
 const validateObjectRecursively = (object = { }, path, schema, rootObject, rootSchema) => {
@@ -57,34 +83,10 @@ const validateObjectRecursively = (object = { }, path, schema, rootObject, rootS
     const initialErrors = (_root && validateValue(object, _root)) || { };
 
     const errors = Object.keys(rest).reduce((prev, curProperty) => {
-
         const fullPath = `${path ? path + "." : ""}${curProperty}`;
         const validators = schema[curProperty];
         const propertyValue = object[curProperty];
-
-        let validationResult;
-        if (Array.isArray(propertyValue)) {
-            validationResult = propertyValue.reduce((prev, item, index) => {
-                const arrayPath = `${fullPath}[${index}]`;
-                let itemValidationResult;
-                if (typeof(item) === "object") {
-                    itemValidationResult = validateObjectRecursively(item, arrayPath, validators, rootObject, rootSchema);
-                    return { ...prev, ...itemValidationResult };
-                } else {
-                    itemValidationResult = validateValue(item, validators, arrayPath, rootObject);
-                    return itemValidationResult.length > 0 ? { ...prev, [arrayPath]: itemValidationResult } : prev;
-                }
-                
-            }, { });
-            return { ...prev, ...validationResult };
-        } else if (typeof(validators) === "object") {
-            validationResult = validateObjectRecursively(propertyValue, fullPath, validators, rootObject, rootSchema);
-            return { ...prev, ...validationResult };
-        } else {
-            validationResult = validateValue(propertyValue, validators, fullPath, rootObject);
-            return validationResult.length > 0 ? { ...prev, [fullPath]: validationResult } : prev;
-        }
-
+        return validateProperty(prev, propertyValue, fullPath, validators, rootObject, rootSchema);
     }, initialErrors);
 
     return Object.keys(errors).length > 0 ? errors : undefined;
