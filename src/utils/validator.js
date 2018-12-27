@@ -68,11 +68,17 @@ const validateProperty = (prev, propertyValue, fullPath, validators, rootObject,
         validationResult = validateValue(propertyValue, validators, fullPath, rootObject);
     }
 
-    if (typeof(validationResult) === "object") {
-        return { ...prev, ...validationResult };
-    } else {
-        return validationResult ? { ...prev, [fullPath]: validationResult } : prev;
-    }
+    const transformResult = validationResult => {
+        if (typeof(validationResult) === "object") {
+            return { ...prev, ...validationResult };
+        } else {
+            return validationResult ? { ...prev, [fullPath]: validationResult } : prev;
+        }
+    };
+
+    return validationResult instanceof Promise ?
+        validationResult.then(validationResult => transformResult(validationResult)) :
+        transformResult(validationResult);
 
 };
 
@@ -82,13 +88,19 @@ const validateObject = (object = { }, path, schema, rootObject, rootSchema) => {
     const initialErrors = (_root && validateValue(object, _root)) || { };
 
     const errors = Object.keys(rest).reduce((prev, curProperty) => {
-        const fullPath = `${path ? path + "." : ""}${curProperty}`;
-        const validators = schema[curProperty];
-        const propertyValue = object[curProperty];
-        return validateProperty(prev, propertyValue, fullPath, validators, rootObject, rootSchema);
+        const exec = (prev, curProperty) => {
+            const fullPath = `${path ? path + "." : ""}${curProperty}`;
+            const validators = schema[curProperty];
+            const propertyValue = object[curProperty];
+            return validateProperty(prev, propertyValue, fullPath, validators, rootObject, rootSchema);
+        };
+        return prev instanceof Promise ? prev.then(prev => exec(prev, curProperty)) : exec(prev, curProperty);
     }, initialErrors);
 
-    return Object.keys(errors).length > 0 ? errors : undefined;
+    const transform = errors => Object.keys(errors).length > 0 ? errors : undefined;
+    return errors instanceof Promise ?
+        errors.then(errors => transform(errors)) :
+        transform(errors);
 
 };
 
