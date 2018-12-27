@@ -168,7 +168,7 @@ describe("Validator", () => {
 
     describe("Validate", () => {
 
-        it.only("Valid flat object", () => {
+        it("Valid flat object", () => {
             const object = { firstName: "Bill", lastName: "Gates" };
             const schema = { firstName: required(), lastName: required() };
             expect(validate(object, schema)).not.to.be.ok;
@@ -178,23 +178,23 @@ describe("Validator", () => {
             const object = { };
             const schema = { firstName: required(), lastName: required() };
             expect(validate(object, schema)).to.deep.equal({
-                "firstName": "Value is required",
-                "lastName": "Value is required",
+                "firstName": [ "Value is required" ],
+                "lastName": [ "Value is required" ],
             });
         });
 
         it("Invalid nested object", () => {
             const object = { };
             const schema = { field: { nested: required() } };
-            expect(validate(object, schema)).to.deep.equal({ "field.nested": "Value is required" });
+            expect(validate(object, schema)).to.deep.equal({ "field.nested": [ "Value is required" ] });
         });
 
         it("Invalid custom validators", () => {
             const object = { firstName: "", lastName: "Gates" };
             const schema = { firstName: required(), lastName: (value, path, allValues) => "Invalid" };
             expect(validate(object, schema)).to.deep.equal({
-                "firstName": "Value is required",
-                "lastName": "Invalid",
+                "firstName": [ "Value is required" ],
+                "lastName": [ "Invalid" ],
             });
         });
 
@@ -208,8 +208,8 @@ describe("Validator", () => {
             const object = { array: [{ id: "1" }, { id: "2" }] };
             const schema = { array: { field: required() } };
             expect(validate(object, schema)).to.deep.equal({
-                "array[0]": "Value is required",
-                "array[1]": "Value is required",
+                "array[0].field": [ "Value is required" ],
+                "array[1].field": [ "Value is required" ],
             });
         });
 
@@ -217,8 +217,8 @@ describe("Validator", () => {
             const object = { array: ["1", "2", "3", "1"] };
             const schema = { array: uniqueArray() };
             expect(validate(object, schema)).to.deep.equal({
-                "array[0]": "Value is not unique",
-                "array[3]": "Value is not unique",
+                "array[0]": [ "Value is not unique" ],
+                "array[3]": [ "Value is not unique" ],
             });
         });
 
@@ -226,8 +226,8 @@ describe("Validator", () => {
             const object = { array: [{ id: "1" }, { id: "2" }, { id: "3" }, { id: "1" }] };
             const schema = { array: uniqueArray(undefined, (x, y) => x.id === y.id) };
             expect(validate(object, schema)).to.deep.equal({
-                "array[0]": "Value is not unique",
-                "array[3]": "Value is not unique",
+                "array[0]": [ "Value is not unique" ],
+                "array[3]": [ "Value is not unique" ],
             });
         });
 
