@@ -255,6 +255,15 @@ describe("Validator", () => {
             expect(await validate(object, schema)).to.deep.equal({ "username": error });
         });
 
+        it("Sync and async", async () => {
+            const object = { fieldOne: "value", fieldTwo: 4 };
+            let schema = { fieldOne: async () => "Invalid", fieldTwo: () => "No" };
+            expect(await validate(object, schema)).to.deep.equal({ "fieldOne": "Invalid", "fieldTwo": "No" });
+
+            schema = { fieldOne: () => "No", fieldTwo: async () => "Invalid" };
+            expect(await validate(object, schema)).to.deep.equal({ "fieldOne": "No", "fieldTwo": "Invalid" });
+        });
+
     });
 
 });
