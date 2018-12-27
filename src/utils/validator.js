@@ -62,7 +62,6 @@ const validateProperty = (prev, propertyValue, fullPath, validators, rootObject,
             const arrayPath = `${fullPath}[${index}]`;
             return validateProperty(prev, item, arrayPath, validators, rootObject, rootSchema);
         }, { });
-        return { ...prev, ...validationResult };
     } else if (typeof(validators) === "object") {
         validationResult = validateObject(propertyValue, fullPath, validators, rootObject, rootSchema);
     } else {

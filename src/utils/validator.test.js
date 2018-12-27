@@ -245,14 +245,14 @@ describe("Validator", () => {
         it("Async validate", async () => {
             const object = { field: "value" };
             const schema = { field: async () => "Invalid" };
-            expect(await validate(object, schema)).to.equal("Invalid");
+            expect(await validate(object, schema)).to.equal({ "field": "Invalid" });
         });
 
         it("Async root validate", async () => {
             const error = "Username is not unique";
             const object = { username: "user" };
             const schema = { _root: async value => ({ username: error }) };
-            expect(await validate(object, schema)).to.equal({ username: error });
+            expect(await validate(object, schema)).to.equal({ "username": error });
         });
 
     });
