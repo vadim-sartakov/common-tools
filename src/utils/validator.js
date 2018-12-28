@@ -1,5 +1,4 @@
 import { format } from "util";
-import _ from "lodash";
 
 const valueIsAbsent = value => 
     value === undefined ||
@@ -31,14 +30,53 @@ export const max = (maxValue, message) => value => {
     return valueToCheck > maxValue ? (message || format("Should be not more than %s", maxValue)) : undefined;
 };
 
-export const uniqueArray = (comparator = (value, item) => value === item, message) => (value, path, allValues, context) => {
+const reduceRecursively = (array, ) => {
+
+};
+
+const forEachRecursively = (array, callback, childrenProperty, indexes = []) => {
+    array.forEach((item, index) => {
+        const curIndexes = [...indexes, index];
+        if (Array.isArray(item)) {
+            forEachRecursively(item, callback, childrenProperty, curIndexes);
+            return;
+        } else {
+            callback(item, curIndexes);
+            const children = childrenProperty && item[childrenProperty];
+            if (children) forEachRecursively(children, callback, childrenProperty, curIndexes);
+        }
+    });
+};
+
+const compareRecursively = (array, initialValue, callback, childrenProperty) => {
+    forEachRecursively(array, (iItem, iIndexes) => {
+        forEachRecursively(array, (jItem, jIndexes) => {
+            initialValue = callback(initialValue, iItem, jItem);
+        }, childrenProperty);
+    }, childrenProperty);
+};
+
+export const validateArray = (reduce, validate, childrenProperty) => (value, fullPath) => {
+    if (valueIsAbsent(value)) return;
+    
+    const result = reduceArrayRecursively(value, reduce, childrenProperty, initialValue);
+    return validate(result);
+};
+
+export const unique = (comparator = (value, item) => value === item, message, childrenProperty) => {
+    const reduce = (accumulator, iItem, jItem) => comparator(iItem, jItem) ? accumulator + 1 : accumulator;
+    const validate = (item, occurrences) => occurrences > 1 ? (message || "Value is not unique") : undefined;
+    return validateArray(reduce, validate, childrenProperty);
+};
+
+/*export const unique = (comparator = (value, item) => value === item, message) => (value, allValues, context) => {
     if (valueIsAbsent(value)) return;
     const { currentArray } = context;
     const occurrences = currentArray.reduce((prev, item) => {
         return comparator(value, item) ? prev + 1 : prev;
     }, 0);
     return occurrences > 1 ? (message || "Value is not unique") : undefined;
-};
+};*/
 
 const validateValue = (value, validators, fullPath, context) => {
     if (!Array.isArray(validators)) validators = [validators];
@@ -46,7 +84,7 @@ const validateValue = (value, validators, fullPath, context) => {
     let error;
     for (let i = 0; i < validators.length; i++) {
         const validator = validators[i];
-        error = validator(value, fullPath, context.object, context);
+        error = validator(value, fullPath, context.object, context.index);
         if (error) break;
     }
     return error;
@@ -58,12 +96,12 @@ const validateProperty = (prev, propertyValue, fullPath, validators, context) =>
     if (Array.isArray(propertyValue)) {
         validationResult = propertyValue.reduce((prev, item, index) => {
             const arrayPath = `${fullPath}[${index}]`;
-            return validateProperty(prev, item, arrayPath, validators, { ...context, currentArray: propertyValue });
+            return validateProperty(prev, item, arrayPath, validators, { ...context, index });
         }, { });
     } else if (typeof(validators) === "object") {
         validationResult = validateObject(propertyValue, fullPath, validators, context);
     } else {
-        validationResult = validateValue(propertyValue, validators, fullPath, context);
+        validationResult = validateValue(propertyValue, fullPath, validators, context);
     }
 
     const transformResult = validationResult => {

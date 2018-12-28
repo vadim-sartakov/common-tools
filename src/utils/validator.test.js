@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { required, match, min, max, uniqueArray, uniqueObject, validate, validateAsync } from "./validator";
+import { required, match, min, max, unique, uniqueObject, validate, validateAsync } from "./validator";
 
 describe("Validator", () => {
 
@@ -140,27 +140,27 @@ describe("Validator", () => {
         describe("Unique", () => {
 
             it("Valid", () => {
-                const validator = uniqueArray();
+                const validator = unique();
                 const array = ["1", "2"];
                 expect(validator("1", "array[0]", { array }, { currentArray: array })).not.to.be.ok;
             });
 
             it("Invalid", () => {
-                const validator = uniqueArray();
+                const validator = unique();
                 const array = ["1", "2", "1", "2"];
                 expect(validator("1", "array[0]", { array }, { currentArray: array })).to.equal("Value is not unique");
                 expect(validator("2", "array[0]", { array }, { currentArray: array })).to.equal("Value is not unique");
             });
 
             it("Mixed", () => {
-                const validator = uniqueArray();
+                const validator = unique();
                 const array = ["1", "2", "1", "2"];
                 expect(validator("1", "array[0]", { array }, { currentArray: array })).to.equal("Value is not unique");
                 expect(validator("3", "array[0]", { array }, { currentArray: array })).not.to.be.ok;
             });
 
             it("Custom message and comparator", () => {
-                const validator = uniqueArray((x, y) => x.id === y.id, "Custom message");
+                const validator = unique((x, y) => x.id === y.id, "Custom message");
                 const validArray = [{ id: "1"} , { id: "2" }];
                 const invalidArray = [{ id: "1"} , { id: "2" }, { id: "1"}];
                 expect(validator({ id: "1"}, "array[0]", { array: validArray }, { currentArray: validArray })).not.to.be.ok;
@@ -220,7 +220,7 @@ describe("Validator", () => {
 
         it("Invalid string array", () => {
             const object = { array: ["1", "2", "3", "1"] };
-            const schema = { array: uniqueArray() };
+            const schema = { array: unique() };
             expect(validate(object, schema)).to.deep.equal({
                 "array[0]": "Value is not unique",
                 "array[3]": "Value is not unique",
@@ -229,7 +229,7 @@ describe("Validator", () => {
 
         it("Invalid object array", () => {
             const object = { array: [{ id: "1" }, { id: "2" }, { id: "3" }, { id: "1" }] };
-            const schema = { array: uniqueArray((x, y) => x.id === y.id) };
+            const schema = { array: unique((x, y) => x.id === y.id) };
             expect(validate(object, schema)).to.deep.equal({
                 "array[0]": "Value is not unique",
                 "array[3]": "Value is not unique",
@@ -238,10 +238,39 @@ describe("Validator", () => {
 
         it("Invalid object array with specified field", () => {
             const object = { array: [{ code: "1" }, { code: "2" }, { code: "3" }, { code: "1" }] };
-            const schema = { array: { code: uniqueArray((value, item) => value === item.code) } };
+            const schema = { array: { code: unique((value, item) => value === item.code) } };
             expect(validate(object, schema)).to.deep.equal({
                 "array[0].code": "Value is not unique",
                 "array[3].code": "Value is not unique",
+            });
+        });
+
+        it("Custom array validator", () => {
+            const object = { array: [{ id: "1" }, { id: "2" }] };
+            const validationResult = { "array[0].id": "Wrong", "array[1].id": "Wrong" };
+            const schema = { array: (value, path, allValues) => validationResult };
+            expect(validate(object, schema)).to.deep.equal(validationResult);
+        });
+
+        it.skip("Tree", () => {
+            const object = {
+                tree: [
+                    { id: "1", code: "8", children: [
+                        { id: "2", code: "1" }
+                    ] },
+                    { id: "3", code: "2", children: [
+                        { id: "4", code: "1", children: [
+                            {id: "5", code: "1"}
+                        ] }
+                    ] },
+                    { id: "6", code: "5" }
+                ]
+            };
+            const schema = { tree: { "code.children._R": unique((value, item) => value === item.code) } };
+            expect(validate(object, schema)).to.deep.equal({
+                "tree[0].children[0].code": "Value is not unique",
+                "tree[1].children[0].code": "Value is not unique",
+                "tree[1].children[0].children[0].code": "Value is not unique",
             });
         });
 
