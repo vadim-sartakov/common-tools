@@ -141,25 +141,30 @@ describe("Validator", () => {
 
             it("Valid", () => {
                 const validator = uniqueArray();
-                expect(validator("1", "array[0]", { array: ["1", "2"] })).not.to.be.ok;
+                const array = ["1", "2"];
+                expect(validator("1", "array[0]", { array }, { currentArray: array })).not.to.be.ok;
             });
 
             it("Invalid", () => {
                 const validator = uniqueArray();
-                expect(validator("1", "array[0]", { array: ["1", "2", "1", "2"] })).to.equal("Value is not unique");
-                expect(validator("2", "array[0]", { array: ["1", "2", "1", "2"] })).to.equal("Value is not unique");
+                const array = ["1", "2", "1", "2"];
+                expect(validator("1", "array[0]", { array }, { currentArray: array })).to.equal("Value is not unique");
+                expect(validator("2", "array[0]", { array }, { currentArray: array })).to.equal("Value is not unique");
             });
 
             it("Mixed", () => {
                 const validator = uniqueArray();
-                expect(validator("1", "array[0]", { array: ["1", "2", "1", "2"] })).to.equal("Value is not unique");
-                expect(validator("3", "array[0]", { array: ["1", "2", "1", "2"] })).not.to.be.ok;
+                const array = ["1", "2", "1", "2"];
+                expect(validator("1", "array[0]", { array }, { currentArray: array })).to.equal("Value is not unique");
+                expect(validator("3", "array[0]", { array }, { currentArray: array })).not.to.be.ok;
             });
 
             it("Custom message and comparator", () => {
                 const validator = uniqueArray((x, y) => x.id === y.id, "Custom message");
-                expect(validator({ id: "1"}, "array[0]", { array: [{ id: "1"} , { id: "2" }] })).not.to.be.ok;
-                expect(validator({ id: "1"}, "array[0]", { array: [{ id: "1"} , { id: "2" }, { id: "1"}] })).to.equal("Custom message");
+                const validArray = [{ id: "1"} , { id: "2" }];
+                const invalidArray = [{ id: "1"} , { id: "2" }, { id: "1"}];
+                expect(validator({ id: "1"}, "array[0]", { array: validArray }, { currentArray: validArray })).not.to.be.ok;
+                expect(validator({ id: "1"}, "array[0]", { array: invalidArray }, { currentArray: invalidArray })).to.equal("Custom message");
             });
 
         });
@@ -228,6 +233,15 @@ describe("Validator", () => {
             expect(validate(object, schema)).to.deep.equal({
                 "array[0]": "Value is not unique",
                 "array[3]": "Value is not unique",
+            });
+        });
+
+        it("Invalid object array with specified field", () => {
+            const object = { array: [{ code: "1" }, { code: "2" }, { code: "3" }, { code: "1" }] };
+            const schema = { array: { code: uniqueArray((value, item) => value === item.code) } };
+            expect(validate(object, schema)).to.deep.equal({
+                "array[0].code": "Value is not unique",
+                "array[3].code": "Value is not unique",
             });
         });
 
