@@ -46,22 +46,31 @@ const toTreePath = (rootPath, childrenProperty, indexes) => {
     return `${rootPath}[${chain}]`;
 };
 
-export const unique = (comparator = (itemX, itemY) => itemX === itemY, message, childrenProperty) => (value, fullPath) => {
+export const array = (reducer, reducerInitialValue, validator, childrenProperty) => (value, fullPath, allValues) => {
 
     if (valueIsAbsent(value)) return;
 
     const errors = reduceRecursively(value, (errorAccumulator, outerItem, indexes) => {
 
-        const occurrences = reduceRecursively(value, (occurrencesAccumulator, innerItem) => {
-            return comparator(outerItem, innerItem) ? occurrencesAccumulator + 1 : occurrencesAccumulator;
-        }, 0, childrenProperty);
+        const result = reduceRecursively(value, (resultAccumulator, innerItem) => {
+            return reducer(resultAccumulator, outerItem, innerItem);
+        }, reducerInitialValue, childrenProperty);
 
-        const error = occurrences > 1 ? (message || "Value is not unique") : undefined;
+        const error = validator(result, fullPath, allValues);
         return error ? { ...errorAccumulator, [toTreePath(fullPath, childrenProperty, indexes)]: error } : errorAccumulator;
 
     }, { }, childrenProperty);
 
     return Object.keys(errors).length === 0 ? undefined : errors;
+
+};
+
+export const unique = (comparator = (itemX, itemY) => itemX === itemY, message, childrenProperty) => {
+    const reducer = (occurrencesAccumulator, outerItem, innerItem) => {
+        return comparator(outerItem, innerItem) ? occurrencesAccumulator + 1 : occurrencesAccumulator;
+    };
+    const validator = occurrences => occurrences > 1 ? (message || "Value is not unique") : undefined;
+    return array(reducer, 0, validator, childrenProperty);
 };
 
 const validateValue = (value, fullPath, validators, context) => {
