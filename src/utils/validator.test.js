@@ -34,6 +34,11 @@ describe("Validator", () => {
                 expect(customValidator(null)).to.equal("Custom message");
             });
 
+            it("Null with message function", () => {
+                const customValidator = required(key => key);
+                expect(customValidator(null)).to.equal("required");
+            });
+
             it("Empty string", () => {
                 expect(validator("")).to.be.ok;
             });
@@ -69,6 +74,11 @@ describe("Validator", () => {
                 expect(validator("-+*")).to.equal("Custom message");
             });
 
+            it("Fail with message function", () => {
+                const validator = match(/w+/, key => key);
+                expect(validator("-+*")).to.equal("match");
+            });
+
         });
 
         describe("Min", () => {
@@ -85,6 +95,10 @@ describe("Validator", () => {
                 expect(validator([1, 2, 3, 4, 5])).not.to.be.ok;
                 expect(validator("abcdefghi")).not.to.be.ok;
                 expect(validator("123456789")).not.to.be.ok;
+                const now = new Date();
+                const date = new Date();
+                date.setDate(date.getDate() + 1000);
+                expect(min(now)(date)).not.to.be.ok;
             });
 
             it("Invalid", () => {
@@ -95,6 +109,10 @@ describe("Validator", () => {
                 expect(validator([1, 2])).to.equal(error);
                 expect(validator("ab")).to.equal(error);
                 expect(validator("12")).to.equal(error);
+                const now = new Date();
+                const date = new Date();
+                date.setDate(date.getDate() - 1000);
+                expect(min(now)(date)).to.equal("Should be at least " + now);
             });
 
             it("Custom message", () => {
@@ -104,6 +122,11 @@ describe("Validator", () => {
                 expect(validator(2.45)).to.equal(error);
                 expect(validator([1, 2])).to.equal(error);
                 expect(validator("ab")).to.equal(error);
+            });
+
+            it("Message function", () => {
+                const validator = min(5, key => key);
+                expect(validator(2)).to.equal("min");
             });
 
         });
@@ -121,6 +144,10 @@ describe("Validator", () => {
                 expect(validator([1, 2])).not.to.be.ok;
                 expect(validator("ab")).not.to.be.ok;
                 expect(validator("12")).not.to.be.ok;
+                const now = new Date();
+                const date = new Date();
+                date.setDate(date.getDate() - 1000);
+                expect(max(now)(date)).not.to.be.ok;
             });
 
             it("Invalid", () => {
@@ -131,6 +158,10 @@ describe("Validator", () => {
                 expect(validator([1, 2, 3, 4, 5, 6])).to.equal(error);
                 expect(validator("abcdefghi")).to.equal(error);
                 expect(validator("123456789")).to.equal(error);
+                const now = new Date();
+                const date = new Date();
+                date.setDate(date.getDate() + 1000);
+                expect(max(now)(date)).to.equal("Should be not more than " + now);
             });
 
             it("Custom message", () => {
@@ -141,6 +172,11 @@ describe("Validator", () => {
                 expect(validator([1, 2, 3, 4, 5, 6])).to.equal(error);
                 expect(validator("abcdefghi")).to.equal(error);
                 expect(validator("123456789")).to.equal(error);
+            });
+
+            it("Message function", () => {
+                const validator = max(5, key => key);
+                expect(validator(6)).to.equal("max");
             });
 
         });
