@@ -63,28 +63,24 @@ export const validateArray = (reduce, validate, childrenProperty) => (value, ful
     return validate(result);
 };
 
-export const unique = (comparator = (value, item) => value === item, message, childrenProperty) => {
-    const reduce = (accumulator, iItem, jItem) => comparator(iItem, jItem) ? accumulator + 1 : accumulator;
-    const validate = (item, occurrences) => occurrences > 1 ? (message || "Value is not unique") : undefined;
-    return validateArray(reduce, validate, childrenProperty);
+export const unique = (comparator = (itemX, itemY) => itemX === itemY, message, childrenProperty) => (value, fullPath) => {
+    const errors = value.reduce((errorAccumulator, outerItem, index) => {
+        const occurrences = value.reduce((occurrencesAccumulator, innerItem) => {
+            return comparator(outerItem, innerItem) ? occurrencesAccumulator + 1 : occurrencesAccumulator;
+        }, 0);
+        const error = occurrences > 1 ? (message || "Value is not unique") : undefined;
+        return error ? { ...errorAccumulator, [`${fullPath}[${index}]`]: error } : errorAccumulator;
+    }, { });
+    return Object.keys(errors).length === 0 ? undefined : errors;
 };
 
-/*export const unique = (comparator = (value, item) => value === item, message) => (value, allValues, context) => {
-    if (valueIsAbsent(value)) return;
-    const { currentArray } = context;
-    const occurrences = currentArray.reduce((prev, item) => {
-        return comparator(value, item) ? prev + 1 : prev;
-    }, 0);
-    return occurrences > 1 ? (message || "Value is not unique") : undefined;
-};*/
-
-const validateValue = (value, validators, fullPath, context) => {
+const validateValue = (value, fullPath, validators, context) => {
     if (!Array.isArray(validators)) validators = [validators];
     // Returning only first error
     let error;
     for (let i = 0; i < validators.length; i++) {
         const validator = validators[i];
-        error = validator(value, fullPath, context.object, context.index);
+        error = validator(value, fullPath, context.object, context);
         if (error) break;
     }
     return error;
@@ -121,7 +117,7 @@ const validateProperty = (prev, propertyValue, fullPath, validators, context) =>
 const validateObject = (object = { }, path, schema, context) => {
     
     const { _root, ...rest } = schema;
-    const initialErrors = (_root && validateValue(object, _root, "", context)) || { };
+    const initialErrors = (_root && validateValue(object, "", _root, context)) || { };
 
     const errors = Object.keys(rest).reduce((prev, curProperty) => {
         const exec = (prev, curProperty) => {
