@@ -177,25 +177,23 @@ describe("Validator", () => {
                 });
             });
 
-            it.skip("Tree", () => {
-                const object = {
-                    tree: [
-                        { id: "1", code: "8", children: [
-                            { id: "2", code: "1" }
-                        ] },
-                        { id: "3", code: "2", children: [
-                            { id: "4", code: "1", children: [
-                                {id: "5", code: "1"}
-                            ] }
-                        ] },
-                        { id: "6", code: "5" }
-                    ]
-                };
-                const schema = { tree: { "code.children._R": unique((value, item) => value === item.code) } };
-                expect(validate(object, schema)).to.deep.equal({
-                    "tree[0].children[0].code": "Value is not unique",
-                    "tree[1].children[0].code": "Value is not unique",
-                    "tree[1].children[0].children[0].code": "Value is not unique",
+            it("Tree", () => {
+                const validator = unique((x, y) => x.code === y.code, null, "children");
+                const tree = [
+                    { id: "1", code: "8", children: [
+                        { id: "2", code: "1" }
+                    ] },
+                    { id: "3", code: "2", children: [
+                        { id: "4", code: "1", children: [
+                            {id: "5", code: "1"}
+                        ] }
+                    ] },
+                    { id: "6", code: "5" }
+                ];
+                expect(validator(tree, "tree")).to.deep.equal({
+                    "tree[0].children[0]": "Value is not unique",
+                    "tree[1].children[0]": "Value is not unique",
+                    "tree[1].children[0].children[0]": "Value is not unique",
                 });
             });
 

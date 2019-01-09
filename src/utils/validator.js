@@ -30,15 +30,37 @@ export const max = (maxValue, message) => value => {
     return valueToCheck > maxValue ? (message || format("Should be not more than %s", maxValue)) : undefined;
 };
 
+const reduceRecursively = (array, callback, initialValue, childrenProperty, initialIndexes = []) => {
+    return array.reduce((accumulator, item, index) => {
+        const indexes = [ ...initialIndexes, index ];
+        let result = callback(accumulator, item, indexes);
+        if (item[childrenProperty]) {
+            result = reduceRecursively(item[childrenProperty], callback, result, childrenProperty, indexes);
+        }
+        return result;
+    }, initialValue);
+};
+
+const toTreePath = (rootPath, childrenProperty, indexes) => {
+    const chain = indexes.join(`].${childrenProperty}[`);
+    return `${rootPath}[${chain}]`;
+};
+
 export const unique = (comparator = (itemX, itemY) => itemX === itemY, message, childrenProperty) => (value, fullPath) => {
+
     if (valueIsAbsent(value)) return;
-    const errors = value.reduce((errorAccumulator, outerItem, index) => {
-        const occurrences = value.reduce((occurrencesAccumulator, innerItem) => {
+
+    const errors = reduceRecursively(value, (errorAccumulator, outerItem, indexes) => {
+
+        const occurrences = reduceRecursively(value, (occurrencesAccumulator, innerItem) => {
             return comparator(outerItem, innerItem) ? occurrencesAccumulator + 1 : occurrencesAccumulator;
-        }, 0);
+        }, 0, childrenProperty);
+
         const error = occurrences > 1 ? (message || "Value is not unique") : undefined;
-        return error ? { ...errorAccumulator, [`${fullPath}[${index}]`]: error } : errorAccumulator;
-    }, { });
+        return error ? { ...errorAccumulator, [toTreePath(fullPath, childrenProperty, indexes)]: error } : errorAccumulator;
+
+    }, { }, childrenProperty);
+
     return Object.keys(errors).length === 0 ? undefined : errors;
 };
 
