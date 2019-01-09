@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { required, match, min, max, unique, uniqueObject, validate, validateAsync } from "./validator";
+import { required, match, min, max, unique, validate } from "./validator";
 
 describe("Validator", () => {
 
@@ -50,6 +50,10 @@ describe("Validator", () => {
 
         describe("Match", () => {
 
+            it("Undefined", () => {
+                expect(match()()).not.to.be.ok;
+            });
+
             it("Correct", () => {
                 const validator = match(/\w+/);
                 expect(validator("Bill")).not.to.be.ok;
@@ -69,7 +73,7 @@ describe("Validator", () => {
 
         describe("Min", () => {
 
-            it("No value", () => {
+            it("Undefined", () => {
                 const validator = min(5);
                 expect(validator()).not.to.be.ok;
             });
@@ -106,6 +110,10 @@ describe("Validator", () => {
 
         describe("Max", () => {
 
+            it("Undefined", () => {
+                expect(max()()).not.to.be.ok;
+            });
+
             it("Valid", () => {
                 const validator = max(5);
                 expect(validator(2)).not.to.be.ok;
@@ -138,6 +146,10 @@ describe("Validator", () => {
         });
 
         describe("Unique", () => {
+
+            it("Undefined", () => {
+                expect(unique()()).not.to.be.ok;
+            });
 
             it("Valid", () => {
                 const validator = unique();

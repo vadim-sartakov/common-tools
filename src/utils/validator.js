@@ -30,40 +30,8 @@ export const max = (maxValue, message) => value => {
     return valueToCheck > maxValue ? (message || format("Should be not more than %s", maxValue)) : undefined;
 };
 
-const reduceRecursively = (array, ) => {
-
-};
-
-const forEachRecursively = (array, callback, childrenProperty, indexes = []) => {
-    array.forEach((item, index) => {
-        const curIndexes = [...indexes, index];
-        if (Array.isArray(item)) {
-            forEachRecursively(item, callback, childrenProperty, curIndexes);
-            return;
-        } else {
-            callback(item, curIndexes);
-            const children = childrenProperty && item[childrenProperty];
-            if (children) forEachRecursively(children, callback, childrenProperty, curIndexes);
-        }
-    });
-};
-
-const compareRecursively = (array, initialValue, callback, childrenProperty) => {
-    forEachRecursively(array, (iItem, iIndexes) => {
-        forEachRecursively(array, (jItem, jIndexes) => {
-            initialValue = callback(initialValue, iItem, jItem);
-        }, childrenProperty);
-    }, childrenProperty);
-};
-
-export const validateArray = (reduce, validate, childrenProperty) => (value, fullPath) => {
-    if (valueIsAbsent(value)) return;
-    
-    const result = reduceArrayRecursively(value, reduce, childrenProperty, initialValue);
-    return validate(result);
-};
-
 export const unique = (comparator = (itemX, itemY) => itemX === itemY, message, childrenProperty) => (value, fullPath) => {
+    if (valueIsAbsent(value)) return;
     const errors = value.reduce((errorAccumulator, outerItem, index) => {
         const occurrences = value.reduce((occurrencesAccumulator, innerItem) => {
             return comparator(outerItem, innerItem) ? occurrencesAccumulator + 1 : occurrencesAccumulator;
@@ -86,6 +54,10 @@ const validateValue = (value, fullPath, validators, context) => {
     return error;
 };
 
+const chainIfPromise = (value, onResolve, ...args) => {
+    return value instanceof Promise ? value.then(resolvedValue => onResolve(resolvedValue, ...args)) : onResolve(value, ...args);
+};
+
 const validateProperty = (prev, propertyValue, fullPath, validators, context) => {
 
     let validationResult;
@@ -100,17 +72,13 @@ const validateProperty = (prev, propertyValue, fullPath, validators, context) =>
         validationResult = validateValue(propertyValue, fullPath, validators, context);
     }
 
-    const transformResult = validationResult => {
+    return chainIfPromise(validationResult, validationResult => {
         if (typeof(validationResult) === "object") {
             return { ...prev, ...validationResult };
         } else {
             return validationResult ? { ...prev, [fullPath]: validationResult } : prev;
         }
-    };
-
-    return validationResult instanceof Promise ?
-        validationResult.then(validationResult => transformResult(validationResult)) :
-        transformResult(validationResult);
+    });
 
 };
 
@@ -120,19 +88,15 @@ const validateObject = (object = { }, path, schema, context) => {
     const initialErrors = (_root && validateValue(object, "", _root, context)) || { };
 
     const errors = Object.keys(rest).reduce((prev, curProperty) => {
-        const exec = (prev, curProperty) => {
+        return chainIfPromise(prev, (prev, curProperty) => {
             const fullPath = `${path ? path + "." : ""}${curProperty}`;
             const validators = schema[curProperty];
             const propertyValue = object[curProperty];
             return validateProperty(prev, propertyValue, fullPath, validators, context);
-        };
-        return prev instanceof Promise ? prev.then(prev => exec(prev, curProperty)) : exec(prev, curProperty);
+        }, curProperty);
     }, initialErrors);
 
-    const transform = errors => Object.keys(errors).length > 0 ? errors : undefined;
-    return errors instanceof Promise ?
-        errors.then(errors => transform(errors)) :
-        transform(errors);
+    return chainIfPromise(errors, errors => Object.keys(errors).length > 0 ? errors : undefined);
 
 };
 
