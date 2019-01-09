@@ -53,7 +53,7 @@ const toTreePath = (rootPath, childrenProperty, indexes) => {
     return `${rootPath}[${chain}]`;
 };
 
-export const array = (reducer, reducerInitialValue, validator, childrenProperty) => (value, fullPath, allValues) => {
+const array = (reducer, reducerInitialValue, validator, childrenProperty) => (value, fullPath, allValues) => {
 
     if (valueIsAbsent(value)) return;
 
@@ -76,7 +76,7 @@ export const unique = (comparator = (itemX, itemY) => itemX === itemY, message, 
     const reducer = (occurrencesAccumulator, outerItem, innerItem) => {
         return comparator(outerItem, innerItem) ? occurrencesAccumulator + 1 : occurrencesAccumulator;
     };
-    const validator = occurrences => occurrences > 1 ? (message || "Value is not unique") : undefined;
+    const validator = (occurrences, path) => occurrences > 1 ? getMessage(message, "unique", path, occurrences, "Value is not unique") : undefined;
     return array(reducer, 0, validator, childrenProperty);
 };
 

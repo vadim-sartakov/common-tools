@@ -213,6 +213,14 @@ describe("Validator", () => {
                 });
             });
 
+            it("Message function", () => {
+                const validator = unique(undefined, key => key);
+                expect(validator(["1", "2", "1"], "array")).to.deep.equal({
+                    "array[0]": "unique",
+                    "array[2]": "unique",
+                });
+            });
+
             it("Tree", () => {
                 const validator = unique((x, y) => x.code === y.code, null, "children");
                 const tree = [

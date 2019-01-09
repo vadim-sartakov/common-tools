@@ -144,6 +144,8 @@ Arguments:
 
 ### Flat objects
 ```javascript
+const object = { first: "1", second: "2", third: "3" };
+
 const removeResult = filterObject(object, { first: 0 });
 expect(removeResult).to.deep.equal({ second: "2", third: "3" });
 
@@ -154,6 +156,7 @@ expect(mergeResult).to.deep.equal({ first: "111", second: "2", third: "3" });
 
 ### Nested objects
 ```javascript
+const object = { nested: { first: "1", second: "2", third: "3" } };
 const result = filterObject(object, { "nested.first": 0 });
 expect(result).to.deep.equal({ nested: { second: "2", third: "3" } });
 ```
@@ -197,3 +200,86 @@ expect(mergeResult).to.deep.equal({ array: [
     { id: 2, first: "3", second: "3" },
 ]});
 ```
+
+## Validator
+`validate` function performs schema-based validation.
+
+```javascript
+const object = { };
+                    // required is one of the the default validator function
+                    // validators chain could be specified with array
+const schema = { firstName: required(), lastName: required() };
+expect(validate(object, schema)).to.deep.equal({
+    "firstName": "Value is required",
+    "lastName": "Value is required",
+});
+```
+
+## Custom validator
+
+Since every validator is a simple function, one could easily define a custom one. The function signature is: `(value, path, allValues) => string`. If value is valid, `undefined` should be returned, if it's not, error string message should be provided. If complex object is validating (e.g. array or plain object), error object could be returned.
+
+### Async validation
+Any validator of schema can be asynchronous. In that case, `validate` function returns `Promise`.
+
+### Root validation
+Some validators are not related to some specific field. In that case there is special `_root` schema property could be provided. Custom roor validators should always return property-errorMessage object.
+
+### Default validators
+
+Each function returns configured validator which conforms the validation contract function. Message could be either plain string or function with signature `(key, path, value) => string`. This callback is useful when custom message format logic is required.
+
+- `required(message)`. Checks if value is not null, undefined, length is not 0 (if array or string).
+- `match(regex, message)`. Tests provided string against regular expression. Could be string or plain js regex object.
+- `min(value, message)`. Checks if value is less than or equal to the provided one. Value could be number, date, string or array (lengths are compared).
+- `max(value, message)`. Checks if value is more than or equal to provided one. Args the same as of `min` validator.
+- `array(reducer, reducerInitialValue, validator, childrenProperty)`.
+- `unique(comparator, message, childrenProperty)`. Compares array elements utilizing provided comparator. If no comparator specified, then simple `===` will be used. If `childrenProperty` is specified, then processing goes recursively.
+
+#### Simple elements
+
+```javascript
+const validator = unique();
+const array = ["1", "2", "1"];
+expect(validator(array, "array")).to.deep.equal({
+    "array[0]": "Value is not unique",
+    "array[2]": "Value is not unique"
+});
+```
+
+#### Complex objects
+
+```javascript
+const validator = unique((x, y) => x.id === y.id);
+const array = [{ id: "1"} , { id: "2" }, { id: "1"}];
+expect(validator(array, "array")).to.deep.equal({
+    "array[0]": "Value is not unique",
+    "array[2]": "Value is not unique",
+});
+```
+
+#### Tree
+```javascript
+const validator = unique((x, y) => x.code === y.code, null, "children");
+const tree = [
+    { id: "1", code: "8", children: [
+        { id: "2", code: "1" }
+    ] },
+    { id: "3", code: "2", children: [
+        { id: "4", code: "1", children: [
+            {id: "5", code: "1"}
+        ] }
+    ] },
+    { id: "6", code: "5" }
+];
+expect(validator(tree, "tree")).to.deep.equal({
+    "tree[0].children[0]": "Value is not unique",
+    "tree[1].children[0]": "Value is not unique",
+    "tree[1].children[0].children[0]": "Value is not unique",
+});
+```
+
+### But there are plenty of validation libraries!
+
+Indeed. But almost all of them are framework-specific, focused on one side of application (back or front) or hard to tweak. This library is simple, framework agnostic and intended to be used both on client and server side and has convinient tools to validate arrays and trees. It relies on magic-free and straightforward pure functions-driven approach.
+The closest library to this one is `validator.js`. But syntax and customisation is a bit redundant, bloated with library specific syntax, it has global state management and it arrays support is limited.
