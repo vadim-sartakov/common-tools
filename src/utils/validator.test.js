@@ -277,13 +277,28 @@ describe("Validator", () => {
             });
         });
 
-        it("Valid array", () => {
+        it("Valid flat array", () => {
+            const object = { array: ["1", "2"] };
+            const schema = { array: unique() };
+            expect(validate(object, schema)).not.to.be.ok;
+        });
+
+        it("Invalid flat array", () => {
+            const object = { array: ["1", "2", "1"] };
+            const schema = { array: unique() };
+            expect(validate(object, schema)).to.deep.equal({
+                "array[0]": "Value is not unique",
+                "array[2]": "Value is not unique",
+            });
+        });
+
+        it("Valid object array property", () => {
             const object = { array: [{ id: "1" }, { id: "2" }] };
             const schema = { array: { id: required() } };
             expect(validate(object, schema)).not.to.be.ok;
         });
 
-        it("Invalid array", () => {
+        it("Invalid object array property", () => {
             const object = { array: [{ id: "1" }, { id: "2" }] };
             const schema = { array: { field: required() } };
             expect(validate(object, schema)).to.deep.equal({
