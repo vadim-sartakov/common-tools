@@ -99,14 +99,15 @@ const chainIfPromise = (value, onResolve, ...args) => {
 const validateProperty = (prev, propertyValue, fullPath, validators, context) => {
 
     const validatorsType = typeof(validators);
+    const validatorsIsObject = !Array.isArray(validators) && validatorsType === "object";
 
     let validationResult;
-    if (Array.isArray(propertyValue) && validatorsType === "object") {
+    if (Array.isArray(propertyValue) && validatorsIsObject) {
         validationResult = propertyValue.reduce((prev, item, index) => {
             const arrayPath = `${fullPath}[${index}]`;
             return validateProperty(prev, item, arrayPath, validators, { ...context, index });
         }, { });
-    } else if (validatorsType === "object") {
+    } else if (validatorsIsObject) {
         validationResult = validateObject(propertyValue, fullPath, validators, context);
     } else {
         validationResult = validateValue(propertyValue, fullPath, validators, context);

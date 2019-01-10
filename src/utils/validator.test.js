@@ -283,10 +283,25 @@ describe("Validator", () => {
             expect(validate(object, schema)).not.to.be.ok;
         });
 
+        it("Valid flat array with validator chain", () => {
+            const object = { array: ["1", "2"] };
+            const schema = { array: [required(), unique()] };
+            expect(validate(object, schema)).not.to.be.ok;
+        });
+
         it("Invalid flat array", () => {
             const object = { array: ["1", "2", "1"] };
             const schema = { array: unique() };
             expect(validate(object, schema)).to.deep.equal({
+                "array[0]": "Value is not unique",
+                "array[2]": "Value is not unique",
+            });
+        });
+
+        it("Invalid flat array with validator chain", () => {
+            const schema = { array: [required(), unique()] };
+            expect(validate({ array: [] }, schema)).to.deep.equal({ "array": "Value is required" });
+            expect(validate({ array: ["1", "2", "1"] }, schema)).to.deep.equal({
                 "array[0]": "Value is not unique",
                 "array[2]": "Value is not unique",
             });
