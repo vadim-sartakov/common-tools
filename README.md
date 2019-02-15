@@ -1,5 +1,5 @@
 # Shared tools
-Cross-platform framework agnostic functionality which can be used both on client or server.
+Cross-platform framework agnostic useful set of tools which can be used on client or server.
 
 ## Security
 
@@ -42,21 +42,21 @@ Plain objects will be merged, strings joined with space.
 ```javascript
 const user = { roles: ["USER", "MANAGER"] };
 const schema = {
-    "USER": {
-        read: { filter: { user: "userId" }, projection: "fieldOne" }
-    },
-    "MANAGER": {
-        read: { filter: { department: "depId" }, projection: "fieldTwo" },
-        update: true
-    }
+  "USER": {
+    read: { filter: { user: "userId" }, projection: "fieldOne" }
+  },
+  "MANAGER": {
+    read: { filter: { department: "depId" }, projection: "fieldTwo" },
+    update: true
+  }
 };
 const result = getPermissions(user, schema, "read", "update");
 expect(result).to.be.deep.equal({
-    read: {
-        filter: { user: "userId", department: "depId" },
-        projection: "fieldOne fieldTwo"
-    },
-    update: true
+  read: {
+    filter: { user: "userId", department: "depId" },
+    projection: "fieldOne fieldTwo"
+  },
+  update: true
 });
 ```
 
@@ -66,22 +66,22 @@ There are cases when some role describes spicific access modifiers and other rol
 ```javascript
 const user = { roles: ["USER", "MANAGER", "ACCOUNTANT"] };
 const schema = {
-    "USER": {
-        read: { filter: { user: "userId" }, projection: "fieldOne" }
-    },
-    "MANAGER": {
-        read: { projection: "fieldTwo" },
-        update: true
-    },
-    "ACCOUNTANT": {
-        read: { filter: { department: "depId" }, projection: "fieldThree" },
-        update: true
-    }
+  "USER": {
+    read: { filter: { user: "userId" }, projection: "fieldOne" }
+  },
+  "MANAGER": {
+    read: { projection: "fieldTwo" },
+    update: true
+  },
+  "ACCOUNTANT": {
+    read: { filter: { department: "depId" }, projection: "fieldThree" },
+    update: true
+  }
 };
 const result = getPermissions(user, schema, "read", "update");
 expect(result).to.be.deep.equal({
-    read: { filter: false, projection: "fieldOne fieldTwo fieldThree" },
-    update: true
+  read: { filter: false, projection: "fieldOne fieldTwo fieldThree" },
+  update: true
 });
 ```
 
@@ -90,17 +90,17 @@ Permission value could also be function. It's used as callback, executes with `u
 ```javascript
 const user = { id: "userId", roles: ["USER", "MANAGER"] };
 const schema = {
-    "USER": {
-        read: {
-            filter: user => ({ user: user.id })
-        }
+  "USER": {
+    read: {
+      filter: user => ({ user: user.id })
     }
+  }
 };
 const result = getPermissions(user, schema, "read");
 expect(result).to.be.deep.equal({
-    read: {
-        filter: { user: "userId" }
-    }
+  read: {
+    filter: { user: "userId" }
+  }
 });
 ```
 
@@ -164,15 +164,15 @@ expect(result).to.deep.equal({ nested: { second: "2", third: "3" } });
 ### Remove arrays properties
 ```javascript
 const object = { array: [
-    { id: 0, first: "1", second: "1" },
-    { id: 1, first: "2", second: "2" },
-    { id: 2, first: "3", second: "3" },
+  { id: 0, first: "1", second: "1" },
+  { id: 1, first: "2", second: "2" },
+  { id: 2, first: "3", second: "3" },
 ]};
 const filterResult = filterObject(object, { "array.first": 0 });
 expect(filterResult).to.deep.equal({ array: [
-    { id: 0, second: "1" },
-    { id: 1, second: "2" },
-    { id: 2, second: "3" },
+  { id: 0, second: "1" },
+  { id: 1, second: "2" },
+  { id: 2, second: "3" },
 ]});
 ```
 
@@ -182,22 +182,22 @@ If field is excluded by projection and merged with some value, function will res
 
 // Initial object
 const object = { array: [
-    { id: 0, first: "1", second: "1" },
-    { id: 1, first: "2", second: "2" },
-    { id: 2, first: "3", second: "3" },
+  { id: 0, first: "1", second: "1" },
+  { id: 1, first: "2", second: "2" },
+  { id: 2, first: "3", second: "3" },
 ]};
                             // Field is prohibited to modify    This is initial value to take values from
 const mergeResult = filterObject(object, { "array.first": 0 }, { array: [
-    { id: 0, first: "111", second: "1" },
-    { id: 1, first: "2", second: "2" },
-    { id: 2, first: "3", second: "333" },
+  { id: 0, first: "111", second: "1" },
+  { id: 1, first: "2", second: "2" },
+  { id: 2, first: "3", second: "333" },
 ]});
 expect(mergeResult).to.deep.equal({ array: [
-            // Value restored since it's not allowed to modify
-    { id: 0, first: "111", second: "1" },
-    { id: 1, first: "2", second: "2" },
-                            // This value was successfully changed
-    { id: 2, first: "3", second: "3" },
+          // Value restored since it's not allowed to modify
+  { id: 0, first: "111", second: "1" },
+  { id: 1, first: "2", second: "2" },
+                          // This value was successfully changed
+  { id: 2, first: "3", second: "3" },
 ]});
 ```
 
@@ -210,8 +210,8 @@ const object = { };
                     // validators chain could be specified with array
 const schema = { firstName: required(), lastName: required() };
 expect(validate(object, schema)).to.deep.equal({
-    "firstName": "Value is required",
-    "lastName": "Value is required",
+  "firstName": "Value is required",
+  "lastName": "Value is required",
 });
 ```
 
@@ -242,8 +242,8 @@ Each function returns configured validator which conforms the validation contrac
 const validator = unique();
 const array = ["1", "2", "1"];
 expect(validator(array, "array")).to.deep.equal({
-    "array[0]": "Value is not unique",
-    "array[2]": "Value is not unique"
+  "array[0]": "Value is not unique",
+  "array[2]": "Value is not unique"
 });
 ```
 
@@ -253,8 +253,8 @@ expect(validator(array, "array")).to.deep.equal({
 const validator = unique((x, y) => x.id === y.id);
 const array = [{ id: "1"} , { id: "2" }, { id: "1"}];
 expect(validator(array, "array")).to.deep.equal({
-    "array[0]": "Value is not unique",
-    "array[2]": "Value is not unique",
+  "array[0]": "Value is not unique",
+  "array[2]": "Value is not unique",
 });
 ```
 
@@ -262,20 +262,20 @@ expect(validator(array, "array")).to.deep.equal({
 ```javascript
 const validator = unique((x, y) => x.code === y.code, null, "children");
 const tree = [
-    { id: "1", code: "8", children: [
-        { id: "2", code: "1" }
-    ] },
-    { id: "3", code: "2", children: [
-        { id: "4", code: "1", children: [
-            {id: "5", code: "1"}
-        ] }
-    ] },
-    { id: "6", code: "5" }
+  { id: "1", code: "8", children: [
+    { id: "2", code: "1" }
+  ] },
+  { id: "3", code: "2", children: [
+    { id: "4", code: "1", children: [
+      {id: "5", code: "1"}
+    ] }
+  ] },
+  { id: "6", code: "5" }
 ];
 expect(validator(tree, "tree")).to.deep.equal({
-    "tree[0].children[0]": "Value is not unique",
-    "tree[1].children[0]": "Value is not unique",
-    "tree[1].children[0].children[0]": "Value is not unique",
+  "tree[0].children[0]": "Value is not unique",
+  "tree[1].children[0]": "Value is not unique",
+  "tree[1].children[0].children[0]": "Value is not unique",
 });
 ```
 
@@ -283,3 +283,20 @@ expect(validator(tree, "tree")).to.deep.equal({
 
 Indeed. But almost all of them are framework-specific, focused on one side of application (back or front) or hard to tweak. This library is simple, framework agnostic and intended to be used both on client and server side and has convinient tools to validate arrays and trees. It relies on magic-free and straightforward pure functions-driven approach.
 The closest library to this one is `validator.js`. But syntax and customisation is a bit redundant, bloated with library specific syntax, it has global state management and it arrays support is limited.
+
+## Projection meta
+`projectionMeta(projection)` is used to verify and convert provided projection to object to unify the definition. Projection could be specified as string or as object.
+
+Both inclusive definitions
+
+- `projectionMeta("id name")`
+- `projectionMeta({ id: 1, name: 1 })` 
+
+will produce `{ isExclusive: false, projection: { id: 1, name: 1 } }`
+
+- `projectionMeta("-id -name")`
+- `projectionMeta({ id: 0, name: 0 })`
+
+will produce `{ isExclusive: true, projection: { id: 0, name: 0 } }`
+
+It is not allowed to mix inclusive and exclusive definitions.
