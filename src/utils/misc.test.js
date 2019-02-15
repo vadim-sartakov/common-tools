@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { filterObject, projection } from "./misc";
+import { filterObject, createProjection } from "./misc";
 
 describe("Object filter", () => {
 
@@ -168,47 +168,47 @@ describe('Get projection meta', () => {
   describe('String', () => {
 
     it('Inclusive', () => {
-      expect(projection("id name")).to.deep.equal({
-        isExclusive: false,
+      expect(createProjection("id name")).to.deep.equal({
+        exclusive: false,
         paths: ['id', 'name']
       });
     });
 
     it('Exclusive', () => {
-      expect(projection("-id -name")).to.deep.equal({
-        isExclusive: true,
+      expect(createProjection("-id -name")).to.deep.equal({
+        exclusive: true,
         paths: ['id', 'name']
       });
     });
 
     it('Mixing types', () => {
-      expect(() => projection("-id name")).to.deep.throw('It\'s not allowed to mix inclusive and exclusive paths in projection');
+      expect(() => createProjection("-id name")).to.deep.throw('It\'s not allowed to mix inclusive and exclusive paths in projection');
     });
 
   });
 
   describe('Object', () => {
     it('Inclusive', () => {
-      expect(projection({ id: 1, name: 1 })).to.deep.equal({
-        isExclusive: false,
+      expect(createProjection({ id: 1, name: 1 })).to.deep.equal({
+        exclusive: false,
         paths: ['id', 'name']
       });
     });
 
     it('Exclusive', () => {
-      expect(projection({ id: 0, name: 0 })).to.deep.equal({
-        isExclusive: true,
+      expect(createProjection({ id: 0, name: 0 })).to.deep.equal({
+        exclusive: true,
         paths: ['id', 'name']
       });
     });
 
     it('Mixing types', () => {
-      expect(() => projection({ id: 1, name: 0 })).to.deep.throw('It\'s not allowed to mix inclusive and exclusive paths in projection');
+      expect(() => createProjection({ id: 1, name: 0 })).to.deep.throw('It\'s not allowed to mix inclusive and exclusive paths in projection');
     });
   });
 
   it('Wrong type', () => {
-    expect(() => projection(4)).to.throw('Projection must be either string or object');
+    expect(() => createProjection(4)).to.throw('Projection must be either string or object');
   });
 
 });

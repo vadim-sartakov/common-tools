@@ -285,18 +285,18 @@ Indeed. But almost all of them are framework-specific, focused on one side of ap
 The closest library to this one is `validator.js`. But syntax and customisation is a bit redundant, bloated with library specific syntax, it has global state management and it arrays support is limited.
 
 ## Projection
-`projection(definition)` is used to verify and convert provided projection to object to unify the definition. Projection could be specified as string or as object.
+`createProjection(projection)` is used to verify and convert provided projection to object to unify the definition. Projection could be specified as string or as object.
 
 Both inclusive definitions
 
-- `projection("id name")`
-- `projection({ id: 1, name: 1 })` 
+- `createProjection("id name")`
+- `createProjection({ id: 1, name: 1 })` 
 
-will produce `{ isExclusive: false, paths: ['id', 'name'] }`
+will produce `{ exclusive: false, paths: ['id', 'name'] }`
 
-- `projection("-id -name")`
-- `projection({ id: 0, name: 0 })`
+- `createProjection("-id -name")`
+- `createProjection({ id: 0, name: 0 })`
 
-will produce `{ isExclusive: true, paths: ['id', 'name'] }`
+will produce `{ exclusive: true, paths: ['id', 'name'] }`
 
 It is not allowed to mix inclusive and exclusive definitions.
