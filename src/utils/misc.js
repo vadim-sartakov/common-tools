@@ -41,23 +41,21 @@ export const filterObject = (object, fields, initialObject) => {
   return filterObjectRecursively(object, initialObject, "", { fields, exclusive });
 };
 
-export const projectionMeta = (projection) => {
+export const projection = definition => {
   let paths, isExclusive, mixingTypes;
-  const type = typeof (projection);
+  const type = typeof (definition);
   if (type === 'string') {
-    paths = projection.split(' ');
+    paths = definition.split(' ');
     isExclusive = paths[0].startsWith('-');
     mixingTypes = paths.some(path => path.startsWith('-') === !isExclusive);
-    projection = paths.reduce((accumulator, path) => (
-      { ...accumulator, [isExclusive ? path.substring(1) : path]: (isExclusive ? 0 : 1) }
-    ), {});
+    paths = paths.map(path => isExclusive ? path.substring(1) : path);
   } else if (type === 'object') {
-    paths = Object.keys(projection);
-    isExclusive = projection[paths[0]] === 0;
-    mixingTypes = paths.some(path => projection[path] === (isExclusive ? 1 : 0));
+    paths = Object.keys(definition);
+    isExclusive = definition[paths[0]] === 0;
+    mixingTypes = paths.some(path => definition[path] === (isExclusive ? 1 : 0));
   } else {
     throw new Error('Projection must be either string or object');
   }
   if (mixingTypes) throw new Error('It\'s not allowed to mix inclusive and exclusive paths in projection');
-  return { isExclusive, projection };
+  return { isExclusive, paths };
 };

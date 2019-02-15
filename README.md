@@ -284,19 +284,19 @@ expect(validator(tree, "tree")).to.deep.equal({
 Indeed. But almost all of them are framework-specific, focused on one side of application (back or front) or hard to tweak. This library is simple, framework agnostic and intended to be used both on client and server side and has convinient tools to validate arrays and trees. It relies on magic-free and straightforward pure functions-driven approach.
 The closest library to this one is `validator.js`. But syntax and customisation is a bit redundant, bloated with library specific syntax, it has global state management and it arrays support is limited.
 
-## Projection meta
-`projectionMeta(projection)` is used to verify and convert provided projection to object to unify the definition. Projection could be specified as string or as object.
+## Projection
+`projection(definition)` is used to verify and convert provided projection to object to unify the definition. Projection could be specified as string or as object.
 
 Both inclusive definitions
 
-- `projectionMeta("id name")`
-- `projectionMeta({ id: 1, name: 1 })` 
+- `projection("id name")`
+- `projection({ id: 1, name: 1 })` 
 
-will produce `{ isExclusive: false, projection: { id: 1, name: 1 } }`
+will produce `{ isExclusive: false, paths: ['id', 'name'] }`
 
-- `projectionMeta("-id -name")`
-- `projectionMeta({ id: 0, name: 0 })`
+- `projection("-id -name")`
+- `projection({ id: 0, name: 0 })`
 
-will produce `{ isExclusive: true, projection: { id: 0, name: 0 } }`
+will produce `{ isExclusive: true, paths: ['id', 'name'] }`
 
 It is not allowed to mix inclusive and exclusive definitions.

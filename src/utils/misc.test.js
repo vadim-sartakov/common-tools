@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { filterObject, projectionMeta } from "./misc";
+import { filterObject, projection } from "./misc";
 
 describe("Object filter", () => {
 
@@ -168,47 +168,47 @@ describe('Get projection meta', () => {
   describe('String', () => {
 
     it('Inclusive', () => {
-      expect(projectionMeta("id name")).to.deep.equal({
+      expect(projection("id name")).to.deep.equal({
         isExclusive: false,
-        projection: { id: 1, name: 1 }
+        paths: ['id', 'name']
       });
     });
 
     it('Exclusive', () => {
-      expect(projectionMeta("-id -name")).to.deep.equal({
+      expect(projection("-id -name")).to.deep.equal({
         isExclusive: true,
-        projection: { id: 0, name: 0 }
+        paths: ['id', 'name']
       });
     });
 
     it('Mixing types', () => {
-      expect(() => projectionMeta("-id name")).to.deep.throw('It\'s not allowed to mix inclusive and exclusive paths in projection');
+      expect(() => projection("-id name")).to.deep.throw('It\'s not allowed to mix inclusive and exclusive paths in projection');
     });
 
   });
 
   describe('Object', () => {
     it('Inclusive', () => {
-      expect(projectionMeta({ id: 1, name: 1 })).to.deep.equal({
+      expect(projection({ id: 1, name: 1 })).to.deep.equal({
         isExclusive: false,
-        projection: { id: 1, name: 1 }
+        paths: ['id', 'name']
       });
     });
 
     it('Exclusive', () => {
-      expect(projectionMeta({ id: 0, name: 0 })).to.deep.equal({
+      expect(projection({ id: 0, name: 0 })).to.deep.equal({
         isExclusive: true,
-        projection: { id: 0, name: 0 }
+        paths: ['id', 'name']
       });
     });
 
     it('Mixing types', () => {
-      expect(() => projectionMeta({ id: 1, name: 0 })).to.deep.throw('It\'s not allowed to mix inclusive and exclusive paths in projection');
+      expect(() => projection({ id: 1, name: 0 })).to.deep.throw('It\'s not allowed to mix inclusive and exclusive paths in projection');
     });
   });
 
   it('Wrong type', () => {
-    expect(() => projectionMeta(4)).to.throw('Projection must be either string or object');
+    expect(() => projection(4)).to.throw('Projection must be either string or object');
   });
 
 });
