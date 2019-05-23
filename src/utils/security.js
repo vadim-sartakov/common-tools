@@ -1,55 +1,55 @@
 export const getPermissions = (user, schema, ...accessKeys) => {
 
-    return user.roles.reduce((permissions, role) => {
+  return user.roles.reduce((permissions, role) => {
 
-        const rolePermissions = schema[role] || schema.ALL || { };
-        const mergedAccesses = accessKeys.reduce((mergedAccesses, accessKey) => {
+    const rolePermissions = schema[role] || schema.ALL || {};
+    const mergedAccesses = accessKeys.reduce((mergedAccesses, accessKey) => {
 
-            const prevPermission = permissions[accessKey];
-            let curPermission = rolePermissions[accessKey] || (role === "ADMIN" && true) || rolePermissions.all || false;
-            if ((prevPermission && curPermission === false) || prevPermission === true) return mergedAccesses;
-            
-            if (typeof(curPermission) === "object") {
+      const prevPermission = permissions[accessKey];
+      let curPermission = rolePermissions[accessKey] || (role === "ADMIN" && true) || rolePermissions.all || false;
+      if ((prevPermission && curPermission === false) || prevPermission === true) return mergedAccesses;
 
-                // Absense of previous modifier indicates that access has been extended by this particular modifier
-                // Setting missing modifier to false
-                const curPermissionKeys = Object.keys(curPermission);
-                prevPermission && Object.keys(prevPermission).forEach(prevPermKey => {
-                    if (!curPermissionKeys.some(curPermKey => curPermKey === prevPermKey)) {
-                        curPermission[prevPermKey] = false;
-                    }
-                });
+      if (typeof (curPermission) === "object") {
 
-                curPermission = Object.keys(curPermission).reduce((mergedAccess, modifierKey) => {
+        // Absense of previous modifier indicates that access has been extended by this particular modifier
+        // Setting missing modifier to false
+        const curPermissionKeys = Object.keys(curPermission);
+        prevPermission && Object.keys(prevPermission).forEach(prevPermKey => {
+          if (!curPermissionKeys.some(curPermKey => curPermKey === prevPermKey)) {
+            curPermission[prevPermKey] = false;
+          }
+        });
 
-                    const prevModifier = mergedAccess && mergedAccess[modifierKey];
-                    let curModifier = curPermission[modifierKey];
+        curPermission = Object.keys(curPermission).reduce((mergedAccess, modifierKey) => {
 
-                    if (prevModifier === false) return mergedAccess;
-                    if (typeof(curModifier) === "function") curModifier = curModifier(user);
+          const prevModifier = mergedAccess && mergedAccess[modifierKey];
+          let curModifier = curPermission[modifierKey];
 
-                    let mergedModifier;
-                    switch(typeof(curModifier)) {
-                        case "object":
-                            mergedModifier = { ...prevModifier, ...curModifier };
-                            break;
-                        case "string":
-                            mergedModifier = `${prevModifier ? prevModifier + " " : ""}` + curModifier;
-                            break;
-                        default:
-                            mergedModifier = curModifier;
-                    }
+          if (prevModifier === false) return mergedAccess;
+          if (typeof (curModifier) === "function") curModifier = curModifier(user);
 
-                    return { ...mergedAccess, [modifierKey]: mergedModifier };
+          let mergedModifier;
+          switch (typeof (curModifier)) {
+            case "object":
+              mergedModifier = { ...prevModifier, ...curModifier };
+              break;
+            case "string":
+              mergedModifier = `${prevModifier ? prevModifier + " " : ""}` + curModifier;
+              break;
+            default:
+              mergedModifier = curModifier;
+          }
 
-                }, prevPermission || {});
+          return { ...mergedAccess, [modifierKey]: mergedModifier };
 
-            }
+        }, prevPermission || {});
 
-            return { ...mergedAccesses, [accessKey]: curPermission };
+      }
 
-        }, { });
-        return { ...permissions, ...mergedAccesses };
-    }, { });
+      return { ...mergedAccesses, [accessKey]: curPermission };
+
+    }, {});
+    return { ...permissions, ...mergedAccesses };
+  }, {});
 
 };
