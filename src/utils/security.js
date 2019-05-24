@@ -9,7 +9,7 @@ export const getPermissions = (user, schema, ...accessKeys) => {
       let curPermission = rolePermissions[accessKey] || (role === "ADMIN" && true) || rolePermissions.all || false;
       if ((prevPermission && curPermission === false) || prevPermission === true) return mergedAccesses;
 
-      if (typeof (curPermission) === "object") {
+      if (curPermission !== null && typeof (curPermission) === "object") {
 
         // Absense of previous modifier indicates that access has been extended by this particular modifier
         // Setting missing modifier to false
@@ -30,6 +30,9 @@ export const getPermissions = (user, schema, ...accessKeys) => {
 
           let mergedModifier;
           switch (typeof (curModifier)) {
+            case null:
+              mergedModifier = curModifier;
+              break;
             case "object":
               mergedModifier = { ...prevModifier, ...curModifier };
               break;

@@ -24,7 +24,7 @@ const shouldRestoreValue = (fullProperty, { exclusive, paths }) => {
 };
 
 const shouldProcessObjectRecursively = (value, paths, fullProperty) => {
-  return typeof (value) === "object" && paths.some(path => path.startsWith(fullProperty + "."));
+  return value !== null && typeof (value) === "object" && paths.some(path => path.startsWith(fullProperty + "."));
 };
 
 const filterObjectRecursively = (payload, initialObject = {}, rootProperty, { paths, exclusive }) => {

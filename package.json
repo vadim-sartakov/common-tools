@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "main": "lib/index.js",
   "scripts": {
-    "test": "mocha src/**/*.test.js --watch --require babel-core/register --require babel-polyfill",
+    "test": "mocha src/**/*.test.js --require babel-core/register --require babel-polyfill",
     "coverage": "nyc npm run test",
     "eslint": "eslint --ignore-path .gitignore ./",
     "clean": "rimraf lib/",
