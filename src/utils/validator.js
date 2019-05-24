@@ -72,7 +72,7 @@ const array = (reducer, reducerInitialValue, validator, childrenProperty) => (va
 
 };
 
-export const unique = (comparator = (itemX, itemY) => itemX === itemY, message, childrenProperty) => {
+export const uniqueArrayItem = (comparator = (itemX, itemY) => itemX === itemY, message, childrenProperty) => {
   const reducer = (occurrencesAccumulator, outerItem, innerItem) => {
     return comparator(outerItem, innerItem) ? occurrencesAccumulator + 1 : occurrencesAccumulator;
   };

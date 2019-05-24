@@ -233,8 +233,7 @@ Each function returns configured validator which conforms the validation contrac
 - `match(regex, message)`. Tests provided string against regular expression. Could be string or plain js regex object.
 - `min(value, message)`. Checks if value is less than or equal to the provided one. Value could be number, date, string or array (lengths are compared).
 - `max(value, message)`. Checks if value is more than or equal to provided one. Args the same as of `min` validator.
-- `array(reducer, reducerInitialValue, validator, childrenProperty)`.
-- `unique(comparator, message, childrenProperty)`. Compares array elements utilizing provided comparator. If no comparator specified, then simple `===` will be used. If `childrenProperty` is specified, then processing goes recursively.
+- `uniqueArrayItem(comparator, message, childrenProperty)`. Compares array elements utilizing provided comparator. If no comparator specified, then simple `===` will be used. If `childrenProperty` is specified, then processing goes recursively.
 
 #### Simple elements
 
